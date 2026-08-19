@@ -4,115 +4,136 @@
 <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='30' fill='%23E53637'/><ellipse cx='32' cy='32' rx='11' ry='14' fill='%23FBF7F0'/></svg>">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{height:100%}
+  html{scroll-behavior:smooth}
   body{
     background:#FFFFFF;
-    overflow:hidden; touch-action:none;
+    overflow-x:hidden;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-    -webkit-user-select:none;user-select:none; color:#111111;
+    color:#111111;
   }
-  #c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:pointer;outline:none}
+  #hero{position:relative;height:100vh;height:100svh;overflow:hidden;
+    -webkit-user-select:none;user-select:none}
+  #c{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:pointer;outline:none;touch-action:pan-y}
   #c:focus-visible{outline:3px solid #E53637;outline-offset:-3px}
-  .ui{position:fixed;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;transition:opacity .45s ease}
+  .ui{position:absolute;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;transition:opacity .45s ease}
   #caption{font-size:clamp(13px,1.9vmin,17px);letter-spacing:.13em;color:#8A8A8A;white-space:nowrap}
   #tag{opacity:0}
   #tag b{display:block;font-weight:800;font-size:clamp(17px,2.7vmin,25px);letter-spacing:-.01em;color:#111111;text-wrap:balance}
   #tag i{display:block;font-style:normal;margin-top:5px;font-weight:700;font-size:clamp(13px,2vmin,17px);letter-spacing:.06em;color:#E53637}
   #hint{opacity:0;font-size:clamp(11px,1.6vmin,14px);letter-spacing:.16em;color:#9E9E9E;text-transform:lowercase}
-  #odo{position:fixed;bottom:calc(4vh + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  #odo{position:absolute;bottom:calc(4vh + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
     display:flex;align-items:baseline;gap:11px;opacity:0;transition:opacity .7s ease;pointer-events:none}
   #odo .lbl{font-size:clamp(10px,1.4vmin,12px);font-weight:800;letter-spacing:.24em;color:#8A8A8A}
   #digits{display:flex;font-weight:900;font-size:clamp(23px,3.6vmin,31px);color:#E53637;font-variant-numeric:tabular-nums}
   .col{height:1em;overflow:hidden}
   .stack{display:block;transition:transform .55s cubic-bezier(.3,1.45,.4,1)}
   .stack span{display:block;height:1em;line-height:1em}
-  #mute{position:fixed;top:calc(14px + env(safe-area-inset-top));right:16px;width:42px;height:42px;border-radius:50%;
+  #mute{position:absolute;top:calc(64px + env(safe-area-inset-top));right:16px;width:42px;height:42px;border-radius:50%;
     border:2px solid rgba(0,0,0,.14);background:rgba(255,255,255,.8);color:#333333;
     display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;
     transition:opacity .5s ease;z-index:5}
   #mute:focus-visible{outline:3px solid #E53637;outline-offset:2px}
-  #foot{position:fixed;right:16px;bottom:calc(12px + env(safe-area-inset-bottom));font-size:11px;letter-spacing:.12em;
-    color:#BDBDBD;pointer-events:none}
-  #menu{position:fixed;top:calc(16px + env(safe-area-inset-top));left:18px;display:flex;gap:2px;z-index:5}
-  #menu button{border:none;background:none;cursor:pointer;font:inherit;font-weight:800;
-    font-size:clamp(11px,1.5vmin,13px);letter-spacing:.14em;color:#111;padding:8px 10px;border-radius:8px}
-  #menu button:hover{color:#E53637}
-  #menu button:focus-visible{outline:2px solid #E53637}
+  #menu{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;z-index:20;
+    padding:calc(10px + env(safe-area-inset-top)) 20px 10px;background:rgba(255,255,255,.88);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  #menu .brand{font-weight:900;letter-spacing:.02em;color:#E53637;text-decoration:none;
+    font-size:clamp(15px,2vmin,18px)}
+  #menu .links{margin-left:auto;display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+  #menu a{text-decoration:none;font-weight:800;font-size:clamp(10px,1.5vmin,13px);letter-spacing:.14em;
+    color:#111;padding:8px 10px;border-radius:8px}
+  #menu a:hover{color:#E53637}
+  #menu a:focus-visible{outline:2px solid #E53637}
+  #menu a[aria-current]{color:#E53637}
   body.simon #tag{opacity:0!important}
+  section{padding:clamp(76px,13vh,150px) 24px;scroll-margin-top:64px}
+  section .inner{max-width:680px;margin:0 auto}
+  section h2{font-size:clamp(30px,5vmin,46px);font-weight:900;letter-spacing:-.015em;color:#111;
+    margin-bottom:16px;text-wrap:balance}
+  section .eyebrow{font-size:12px;font-weight:800;letter-spacing:.24em;color:#E53637;margin-bottom:12px}
+  section p{font-size:clamp(15px,2.1vmin,18px);line-height:1.6;color:#333;margin:14px 0;max-width:60ch}
+  section.alt{background:#F7F7F7}
+  .loopring{display:flex;gap:10px;align-items:center;margin:22px 0 6px;font-weight:900;
+    font-size:clamp(13px,1.9vmin,16px);letter-spacing:.1em;color:#111;flex-wrap:wrap}
+  .loopring i{color:#E53637;font-style:normal}
+  form{margin-top:26px;display:flex;flex-direction:column;gap:14px;max-width:520px}
+  input,textarea{font:inherit;font-size:16px;color:#111;background:#fff;border:2px solid #E0E0E0;
+    border-radius:12px;padding:14px 16px;width:100%}
+  input:focus,textarea:focus{outline:none;border-color:#E53637}
+  textarea{min-height:120px;resize:vertical}
+  .cta{display:inline-block;align-self:flex-start;background:#E53637;color:#fff;font-weight:900;
+    letter-spacing:.14em;font-size:14px;padding:15px 30px;border-radius:999px;text-decoration:none;
+    border:none;cursor:pointer}
+  .cta:hover{background:#111}
+  #formNote{font-size:14px;color:#8A8A8A}
+  #formNote.ok{color:#E53637;font-weight:700}
+  footer{padding:34px 24px calc(30px + env(safe-area-inset-bottom));display:flex;gap:14px;flex-wrap:wrap;
+    align-items:baseline;justify-content:space-between;border-top:1px solid #EEE;
+    font-size:12px;letter-spacing:.12em;color:#9E9E9E}
+  footer b{color:#E53637;font-weight:900}
   body.simon #odo{opacity:0!important}
-  #hud{position:fixed;left:50%;transform:translateX(-50%);display:none;align-items:baseline;gap:14px;z-index:4;
+  #hud{position:absolute;left:50%;transform:translateX(-50%);display:none;align-items:baseline;gap:14px;z-index:4;
     font-weight:900;font-variant-numeric:tabular-nums;color:#111;pointer-events:none}
   #hud .r{font-size:clamp(19px,2.8vmin,26px)} #hud .r b{color:#E53637}
   #hud .b{font-size:clamp(11px,1.5vmin,13px);letter-spacing:.18em;color:#8A8A8A}
   body.simon #hud{display:flex}
-  #scrim{position:fixed;inset:0;background:rgba(17,17,17,.42);opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:8}
-  body.panel-open #scrim{opacity:1;pointer-events:auto}
-  .panel{position:fixed;z-index:9;left:50%;top:50%;transform:translate(-50%,46%);opacity:0;pointer-events:none;
-    width:min(560px,92vw);max-height:min(74vh,660px);overflow-y:auto;background:#fff;border-radius:18px;
-    padding:34px 34px 30px;box-shadow:0 24px 80px rgba(0,0,0,.35);transition:transform .4s cubic-bezier(.2,1.2,.3,1),opacity .3s ease}
-  .panel.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
-  .panel h2{font-size:clamp(22px,3.2vmin,30px);font-weight:900;letter-spacing:-.01em;color:#111;margin-bottom:4px}
-  .panel .eyebrow{font-size:11px;font-weight:800;letter-spacing:.22em;color:#E53637;margin-bottom:10px}
-  .panel p{font-size:15px;line-height:1.55;color:#333;margin:12px 0;max-width:60ch}
-  .panel .x{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
-    background:#F2F2F2;color:#111;font-size:15px;font-weight:900;line-height:1}
-  .panel .x:hover{background:#E53637;color:#fff}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:14px}
-  .tile{aspect-ratio:1;border-radius:12px;background:#F5F5F5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
-  .tile b{color:#E53637;font-size:26px} .tile span{font-size:11px;letter-spacing:.12em;color:#8A8A8A}
-  .cta{display:inline-block;margin-top:10px;background:#E53637;color:#fff;font-weight:900;letter-spacing:.14em;
-    font-size:14px;padding:14px 26px;border-radius:999px;text-decoration:none}
-  .cta:hover{background:#111}
-  .loopring{display:flex;gap:8px;align-items:center;margin:16px 0 4px;font-weight:900;font-size:13px;letter-spacing:.1em;color:#111;flex-wrap:wrap}
-  .loopring i{color:#E53637;font-style:normal}
 </style>
 
-<canvas id="c" tabindex="0" aria-label="ON and ON — flip the switch"></canvas>
-<div class="ui" id="caption">every other ad is off.</div>
-<div class="ui" id="tag"><b>Playable ads that learn.</b><i>on, and on, and on.</i></div>
-<div class="ui" id="hint">drag the ball &nbsp;·&nbsp; tap the letters</div>
-<div id="odo"><span class="lbl">LOOP</span><span id="digits"></span></div>
-<button id="mute" aria-label="mute sound"></button>
-<div id="foot">a playable company</div>
 <nav id="menu" aria-label="site">
-  <button data-panel="work">WORK</button>
-  <button data-panel="loop">HOW IT WORKS</button>
-  <button data-panel="about">ABOUT</button>
-  <button data-panel="contact">CONTACT</button>
+  <a class="brand" href="#top">ON&amp;ON</a>
+  <div class="links">
+    <a href="work.html">WORK</a>
+    <a href="#how">HOW IT WORKS</a>
+    <a href="#about">ABOUT</a>
+    <a href="#contact">CONTACT</a>
+  </div>
 </nav>
-<div id="hud"><span class="r">ROUND <b id="hudR">1</b></span><span class="b">BEST <span id="hudB">0</span></span></div>
-<div id="scrim"></div>
-<section class="panel" id="p-work" role="dialog" aria-modal="true" aria-label="Work">
-  <button class="x" aria-label="close">&#10005;</button>
-  <div class="eyebrow">WHAT'S ON</div><h2>Work</h2>
-  <p>Playables we've designed, built and optimized. The reel is being wired up.</p>
-  <div class="grid">
-    <div class="tile"><b>&amp;</b><span>COMING SOON</span></div>
-    <div class="tile"><b>&amp;</b><span>COMING SOON</span></div>
-    <div class="tile"><b>&amp;</b><span>COMING SOON</span></div>
-    <div class="tile"><b>&amp;</b><span>COMING SOON</span></div>
+<header id="hero">
+  <canvas id="c" tabindex="0" aria-label="ON and ON — flip the switch"></canvas>
+  <div class="ui" id="caption">every other ad is off.</div>
+  <div class="ui" id="tag"><b>Playable ads that learn.</b><i>on, and on, and on.</i></div>
+  <div class="ui" id="hint">drag the ball &nbsp;·&nbsp; tap the letters</div>
+  <div id="odo"><span class="lbl">LOOP</span><span id="digits"></span></div>
+  <div id="hud"><span class="r">ROUND <b id="hudR">1</b></span><span class="b">BEST <span id="hudB">0</span></span></div>
+  <button id="mute" aria-label="mute sound"></button>
+</header>
+<main>
+<section id="how">
+  <div class="inner">
+    <div class="eyebrow">HOW IT WORKS</div>
+    <h2>Creative that learns.</h2>
+    <div class="loopring">MAKE <i>&#8594;</i> SHIP <i>&#8594;</i> LEARN <i>&#8594;</i> REMAKE <i>&#8635;</i></div>
+    <p>Every playable we ship reports back: what got touched first, where thumbs lingered, where players bailed.</p>
+    <p>That data rewrites the next variant &mdash; new hook, new pacing, new difficulty &mdash; automatically. Winners breed. Losers retire.</p>
+    <p>So the ad you're running in month two isn't the ad you launched. It's better. On, and on, and on.</p>
   </div>
 </section>
-<section class="panel" id="p-loop" role="dialog" aria-modal="true" aria-label="The Loop">
-  <button class="x" aria-label="close">&#10005;</button>
-  <div class="eyebrow">HOW IT WORKS</div><h2>Creative that learns.</h2>
-  <div class="loopring">MAKE <i>&#8594;</i> SHIP <i>&#8594;</i> LEARN <i>&#8594;</i> REMAKE <i>&#8635;</i></div>
-  <p>Every playable we ship reports back: what got touched first, where thumbs lingered, where players bailed.</p>
-  <p>That data rewrites the next variant &mdash; new hook, new pacing, new difficulty &mdash; automatically. Winners breed. Losers retire.</p>
-  <p>So the ad you're running in month two isn't the ad you launched. It's better. On, and on, and on.</p>
+<section id="about" class="alt">
+  <div class="inner">
+    <div class="eyebrow">A PLAYABLE COMPANY</div>
+    <h2>ON&amp;ON</h2>
+    <p>A compact studio that designs, builds and optimizes playable ads for games and apps &mdash; creative craft up front, a data loop underneath.</p>
+    <p>Founded by Danielle Sassy.</p>
+  </div>
 </section>
-<section class="panel" id="p-about" role="dialog" aria-modal="true" aria-label="About">
-  <button class="x" aria-label="close">&#10005;</button>
-  <div class="eyebrow">A PLAYABLE COMPANY</div><h2>ON&amp;ON</h2>
-  <p>A compact studio that designs, builds and optimizes playable ads for games and apps &mdash; creative craft up front, a data loop underneath.</p>
-  <p>Founded by Danielle Sassy.</p>
+<section id="contact">
+  <div class="inner">
+    <div class="eyebrow">SWITCH US ON</div>
+    <h2>Let's talk.</h2>
+    <p>Tell us what you're running and what it needs to do. We'll come back with a playable answer.</p>
+    <form action="https://formsubmit.co/dnlssdnl@gmail.com" method="POST">
+      <input type="hidden" name="_subject" value="New lead from onnon.io">
+      <input type="hidden" name="_next" value="https://onnon.io/#thanks">
+      <input type="text" name="_honey" style="display:none">
+      <input type="text" name="name" placeholder="Name" required>
+      <input type="email" name="email" placeholder="Work email" required>
+      <textarea name="message" placeholder="What are you running, and what should it do?" required></textarea>
+      <button class="cta" type="submit">SEND IT &#8594;</button>
+      <div id="formNote">We reply within a day.</div>
+    </form>
+  </div>
 </section>
-<section class="panel" id="p-contact" role="dialog" aria-modal="true" aria-label="Contact">
-  <button class="x" aria-label="close">&#10005;</button>
-  <div class="eyebrow">SWITCH US ON</div><h2>Let's talk.</h2>
-  <p>Tell us what you're running and what it needs to do. We'll come back with a playable answer.</p>
-  <a class="cta" href="mailto:dnlssdnl@gmail.com">LET'S TALK &#8594;</a>
-</section>
+</main>
+<footer><span><b>ON&amp;ON</b> &mdash; a playable company</span><span>&copy; 2026 &middot; onnon.io</span></footer>
 
 <script>
 'use strict';
@@ -505,7 +526,7 @@ function simonHop(g){
 function simonStep(dt){
   for(const g of GL) g.litT=Math.max(0,(g.litT||0)-dt);
   simon.failT=Math.max(0,simon.failT-dt);
-  if(!simon.active||openPanel) return;
+  if(!simon.active) return;
   if(simon.phase==='input'){
     simon.idleT+=dt;
     if(simon.idleT>12){ simon.phase='attract'; simon.idleT=0;
@@ -528,17 +549,17 @@ function simonStep(dt){
     }
   }
 }
-function simonTap(e){
+function simonTap(px,py){
   if(simon.phase!=='input'&&simon.phase!=='attract') return;
   let hit=null;
   for(const g of GL){ const b=g.wbb;
-    if(e.clientX>b[0]-6&&e.clientX<b[2]+6&&e.clientY>b[1]-6&&e.clientY<b[3]+6){ hit=g; break; } }
+    if(px>b[0]-6&&px<b[2]+6&&py>b[1]-6&&py<b[3]+6){ hit=g; break; } }
   if(!hit) return;
   if(simon.phase==='attract'){ simonShow(.5); return; }
   simon.idleT=0;
   const want=GL[simon.seq[simon.idx]];
   if(hit===want){
-    flashGlyph(hit); sparkle(e.clientX,e.clientY); simon.idx++;
+    flashGlyph(hit); sparkle(px,py); simon.idx++;
     if(simon.idx>=simon.seq.length){
       simon.phase='won'; simon.round++;
       if(simon.round-1>simon.best){ simon.best=simon.round-1;
@@ -557,28 +578,6 @@ function simonTap(e){
     setTimeout(()=>{ if(simon.active) simonShow(.7); },850);
   }
 }
-/* ============================ panels / menu ============================ */
-const panels={work:document.getElementById('p-work'), loop:document.getElementById('p-loop'),
-              about:document.getElementById('p-about'), contact:document.getElementById('p-contact')};
-let openPanel=null;
-function showPanel(k){
-  if(openPanel) panels[openPanel].classList.remove('open');
-  openPanel=k; document.body.classList.add('panel-open');
-  panels[k].classList.add('open');
-  note(659.25,.1,'sine',.3);
-}
-function closePanel(){
-  if(!openPanel) return;
-  panels[openPanel].classList.remove('open'); openPanel=null;
-  document.body.classList.remove('panel-open');
-}
-document.getElementById('menu').addEventListener('click',e=>{
-  const b=e.target.closest('button[data-panel]'); if(b){ gestured=true; showPanel(b.dataset.panel); }
-});
-document.getElementById('scrim').addEventListener('click',closePanel);
-for(const k in panels) panels[k].querySelector('.x').addEventListener('click',closePanel);
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePanel(); });
-
 /* ============================ state / boot ============================ */
 let state='off', bootT=0, shakeA=0, hintShown=false, hintT=0, interacted=false;
 function shake(a){ if(!REDUCED) shakeA=Math.max(shakeA,a); }
@@ -603,7 +602,6 @@ function finishBoot(){
 function flipOff(){
   state='off'; sw.kv-=6;
   if(simon.active){ simon.active=false; simon.phase='idle'; document.body.classList.remove('simon'); }
-  closePanel();
   document.body.classList.remove('on');
   for(const g of GL){ g.mix=0; g.popped=false; g.litT=0; }
   minis=[]; trail=[];
@@ -616,32 +614,33 @@ function flipOff(){
 /* ============================ input ============================ */
 let dragging=false, pointer=[0,0];
 function toggle(){ if(state==='off') flipOn(); else if(state==='run'||state==='boot') flipOff(); }
+function cvXY(e){ const r=cv.getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; }
 cv.addEventListener('pointerdown',e=>{
   gestured=true; audio();
-  pointer=[e.clientX,e.clientY];
+  const [px,py]=cvXY(e);
+  pointer=[px,py];
   if(state==='off'){ flipOn(); return; }
   if(state!=='run') return;
-  if(openPanel) return;
-  const swHit = Math.abs(e.clientX-sw.x)<sw.w/2+14 && Math.abs(e.clientY-sw.y)<sw.h/2+14;
+  const swHit = Math.abs(px-sw.x)<sw.w/2+14 && Math.abs(py-sw.y)<sw.h/2+14;
   if(swHit){ flipOff(); return; }
-  if(simon.active){ simonTap(e); return; }
-  if(!REDUCED && !ball.hidden && Math.hypot(e.clientX-ball.p[0], e.clientY-ball.p[1])<Math.max(40,ball.r*2.4)){
+  if(simon.active){ simonTap(px,py); return; }
+  if(!REDUCED && !ball.hidden && Math.hypot(px-ball.p[0], py-ball.p[1])<Math.max(40,ball.r*2.4)){
     dragging=true; ball.mode='drag'; ball.hist=[]; interacted=true; elHint.style.opacity='0';
     cv.setPointerCapture(e.pointerId);
     return;
   }
   for(const g of GL){
     const b=g.wbb;
-    if(e.clientX>b[0]-6&&e.clientX<b[2]+6&&e.clientY>b[1]-6&&e.clientY<b[3]+6){
+    if(px>b[0]-6&&px<b[2]+6&&py>b[1]-6&&py<b[3]+6){
       g.spr.sv-=3; g.spr.rv+=rand(-2,2); note(g.note,.2,'triangle',.8);
-      sparkle(e.clientX,e.clientY); interacted=true; elHint.style.opacity='0';
+      sparkle(px,py); interacted=true; elHint.style.opacity='0';
       return;
     }
   }
-  if(!REDUCED){ spawnMini(e.clientX,e.clientY); confetti(e.clientX,e.clientY,6); }
+  if(!REDUCED){ spawnMini(px,py); confetti(px,py,6); }
   note(392,.1,'sine',.3);
 });
-cv.addEventListener('pointermove',e=>{ pointer=[e.clientX,e.clientY]; });
+cv.addEventListener('pointermove',e=>{ pointer=cvXY(e); });
 function releaseDrag(){
   if(!dragging) return;
   dragging=false;
@@ -774,9 +773,10 @@ function draw(){
 }
 
 /* ============================ layout / loop ============================ */
+const hero=document.getElementById('hero');
 function resize(){
   DPR=Math.min(2,window.devicePixelRatio||1);
-  vw=window.innerWidth; vh=window.innerHeight;
+  vw=hero.clientWidth; vh=hero.clientHeight;
   cv.width=Math.round(vw*DPR); cv.height=Math.round(vh*DPR);
   S=Math.min(vw*.86, vh*.60, 660);
   U=S/Math.max(VB[0],VB[1]);
@@ -793,6 +793,11 @@ function resize(){
 }
 window.addEventListener('resize',resize);
 buildOdo(); resize(); elTag.style.opacity='1';
+if(location.hash==='#thanks'){
+  const n=document.getElementById('formNote');
+  if(n){ n.textContent="Sent. We're on it \u2014 expect a reply within a day."; n.classList.add('ok'); }
+  setTimeout(()=>document.getElementById('contact').scrollIntoView(),60);
+}
 
 let last=performance.now(), acc=0;
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) last=performance.now(); });
