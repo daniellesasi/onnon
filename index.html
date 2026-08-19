@@ -741,16 +741,7 @@ function drawBallBody(p,r,vel,sq,sqA,face,isMain){
   ctx.save(); ctx.translate(p[0],p[1]);
   const st=clamp(sp/(3.6*S),0,.22), va=Math.atan2(vel[1],vel[0]);
   ctx.fillStyle='#FFFFFF'; ctx.strokeStyle=DEEP; ctx.lineWidth=Math.max(2,r*.16);
-  if(isMain&&ball.blob){
-    const B=ball.blob, n=B.length, P=[];
-    for(let i=0;i<n;i++){ const a=i/n*Math.PI*2, rr=r*(1+B[i].off);
-      P.push([Math.cos(a)*rr, Math.sin(a)*rr]); }
-    ctx.beginPath();
-    ctx.moveTo((P[n-1][0]+P[0][0])/2,(P[n-1][1]+P[0][1])/2);
-    for(let i=0;i<n;i++){ const nx=P[(i+1)%n], cur=P[i];
-      ctx.quadraticCurveTo(cur[0],cur[1],(cur[0]+nx[0])/2,(cur[1]+nx[1])/2); }
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-  } else {
+  {
     ctx.rotate(Math.abs(sq)>.02?sqA:va);
     const q=Math.abs(sq)>.02? sq*.32 : 0;
     ctx.scale(1+(Math.abs(sq)>.02? q : st), 1-(Math.abs(sq)>.02? q : st));
@@ -761,7 +752,7 @@ function drawBallBody(p,r,vel,sq,sqA,face,isMain){
     const lv=sp>1? mul(nrm(vel), r*.16) : [0,0];
     if(isMain){ lv[0]+=ball.eyeDrift[0]*r*.14; lv[1]+=ball.eyeDrift[1]*r*.14+(ball.mood==='sad'?r*.06:0); }
     const blink = ball.blink>0 ? .1 : 1;
-    const happy = Math.abs(sq)>.35 || (isMain&&ball.mood==='cheer');
+    const happy = Math.abs(sq)>.35 || (isMain&&(ball.mood==='cheer'||ball.mood==='joy'));
     const sad = isMain&&ball.mood==='sad';
     ctx.fillStyle='rgba(229,54,55,.26)';
     for(const sx of [-1,1]){ ctx.beginPath();
@@ -858,14 +849,19 @@ function stepOffBall(dt){
   ball.hidden=false;
   const prev=[ball.p[0],ball.p[1]];
   const G2=3.8*S;
-  if(ball.hopPhase==='crouch'){
+  if(ball.circ){
+    const c=ball.circ; c.t+=dt/c.dur;
+    const th=-Math.PI/2+Math.min(1,c.t)*Math.PI*2;
+    ball.p=[c.cx+Math.cos(th)*c.R, c.cy+Math.sin(th)*c.R];
+    if(c.t>=1){ ball.circ=null; ball.perchG=c.g; ball.offT=rand(.5,1.2); setMood('joy',.6); }
+  } else if(ball.hopPhase==='crouch'){
     ball.hopT-=dt;
     if(ball.hopT<=0){
       const tx=randPerchX(ball.hopTarget);
       const tsy=surfaceAt(ball.hopTarget,tx);
       const to=[tx,(tsy!==null?tsy:ball.hopTarget.wbb[1])-ball.r];
       const y0=ball.p[1], y1=to[1];
-      const apex=Math.min(y0,y1)-Math.max(S*.11,(y0-y1)*.15+S*.06);
+      const apex=Math.min(y0,y1)-Math.max(S*.16,(y0-y1)*.18+S*.09);
       const vy0=-Math.sqrt(2*G2*Math.max(1,y0-apex));
       const T=(-vy0/G2)+Math.sqrt(2*Math.max(1,y1-apex)/G2);
       ball.hv=[(to[0]-ball.p[0])/T, vy0];
@@ -887,7 +883,14 @@ function stepOffBall(dt){
           if(g.spr) g.spr.sv-=1.1*imp;
           ball.sq=imp; ball.sqV=0; ball.sqA=Math.PI/2;
           skewKick(0,.4,imp*.5);
-          ball.hopPhase=null; ball.perchG=g; ball.offT=rand(.9,2.4);
+          ball.hopPhase=null; ball.perchG=g; ball.offT=rand(.55,1.5);
+      if(ball.nextCirc===g && g.mv && g.mv.t==='orbit'){
+        ball.nextCirc=null;
+        const R=g.mv.r+ball.r*.2;
+        ball.circ={cx:g.mv.c[0], cy:g.mv.c[1], R, g, t:0, dur:.8};
+        ball.p=[g.mv.c[0], g.mv.c[1]-R];
+      } else if(Math.random()<.3) setMood('joy',.5);
+      if(ball.chain>0){ ball.chain--; ball.offT=.14; }
           break;
         }
       }
@@ -914,10 +917,14 @@ function stepOffBall(dt){
     if(ball.offT<=0){
       const r=Math.random();
       const cur=ball.perchG||GL.reduce((best,g)=>Math.abs(g.cxm-ball.p[0])<Math.abs(best.cxm-ball.p[0])?g:best,GL[0]);
-      if(r<.42){
+      if(r<.36){
         let g; do{ g=GL[rnd5()]; }while(g===cur);
+        if(Math.random()<.35) ball.chain=1;
         offHopTo(g);
-      } else if(r<.78 && cur){
+      } else if(r<.58){
+        const o=Math.random()<.5?G.O1:G.O2;
+        ball.nextCirc=o; offHopTo(o);
+      } else if(r<.82 && cur){
         const okL=surfaceAt(cur,ball.p[0]-S*.06)!==null, okR=surfaceAt(cur,ball.p[0]+S*.06)!==null;
         const dir=okL&&okR?(Math.random()<.5?-1:1):(okR?1:-1);
         if(okL||okR) ball.stroll={dir, t:rand(.6,1.4), speed:rand(.3,.55)*S};
@@ -1199,13 +1206,11 @@ function step(dt){
   ball.blink-=dt; ball.nextBlink-=dt;
   if(ball.nextBlink<0){ ball.blink=.12; ball.nextBlink=rand(2.2,4.6); }
   ball.sqV=(ball.sqV||0)+(-(ball.sq)*170-(ball.sqV||0)*10.5)*dt; ball.sq+=ball.sqV*dt;
-  stepBlob(dt);
   ball.grounded=(state==='off'&&!ball.hopPhase)||(simon.active&&simon.phase==='input'&&ball.mode==='simon');
   if(ball.grounded&&ball.perchG){
     const sy=surfaceAt(ball.perchG, ball.p[0]);
     if(sy!==null && Math.abs((sy-ball.r)-ball.p[1])<ball.r*2){
-      const bo=(ball.blob[3].off+ball.blob[4].off)/2;
-      ball.p[1]=sy+waveAt(ball.perchG,ball.p[0])-ball.r*(1+bo)-S*.004;
+      ball.p[1]=sy+waveAt(ball.perchG,ball.p[0])-ball.r;
     }
   }
   if(state==='run'){ simonStep(dt); stepGestures(dt); }
