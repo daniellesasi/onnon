@@ -357,10 +357,12 @@ function stepWaves(dt){
     const w=g.wv, v=g.wvV; let e=0;
     for(let i=0;i<WAVE_N;i++){
       const L=w[Math.max(0,i-1)], R=w[Math.min(WAVE_N-1,i+1)];
-      v[i]+=((-w[i])*95+(L+R-2*w[i])*230-v[i]*6.2)*dt;
+      v[i]+=((-w[i])*48+(L+R-2*w[i])*130-v[i]*5.2)*dt;
     }
-    for(let i=0;i<WAVE_N;i++){ w[i]+=v[i]*dt; e+=w[i]*w[i]+v[i]*v[i]; }
-    if(e<1e-5){ w.fill(0); v.fill(0); g.wvOn=0; }
+    let m=0;
+    for(let i=0;i<WAVE_N;i++){ w[i]+=v[i]*dt; e+=w[i]*w[i]+v[i]*v[i]; m=Math.max(m,Math.abs(w[i])); }
+    g.wvPx=m*S*.20;
+    if(e<1e-5){ w.fill(0); v.fill(0); g.wvOn=0; g.wvPx=0; }
   }
 }
 function waveAt(g,wx){
@@ -387,9 +389,10 @@ function drawCache(g,c,alpha,dx,dy){
   if(alpha<=0.003) return;
   const k=g.spr;
   ctx.save(); ctx.globalAlpha=alpha;
-  ctx.translate(g.cxm+(dx||0), g.cym+(dy||0)); ctx.rotate(k.r); ctx.scale(2-k.s, k.s);
-  if(g.wvOn){
-    const STR=20, sw=c.w/STR, srcW=c.cn.width/STR;
+  const ks=1+(k.s-1)*.35;
+  ctx.translate(g.cxm+(dx||0), g.cym+(dy||0)); ctx.scale(2-ks, ks);
+  if(g.wvOn&&g.wvPx>.8){
+    const STR=44, sw=c.w/STR, srcW=c.cn.width/STR;
     for(let si=0;si<STR;si++){
       const off=waveAt(g, c.ox+(si+.5)*sw);
       ctx.drawImage(c.cn, si*srcW, 0, srcW+1, c.cn.height,
@@ -419,7 +422,7 @@ function stepBlob(dt){
     force += stretch*(vd*vd*.85-.28*stretch);
     if(ball.grounded && dy>.45) force -= .11*dy;
     const p=B[i], L=B[(i+n-1)%n], R=B[(i+1)%n];
-    p.vel += ((force-p.off)*150 + (L.off+R.off-2*p.off)*190 - p.vel*9.5)*dt;
+    p.vel += ((force-p.off)*85 + (L.off+R.off-2*p.off)*120 - p.vel*6.8)*dt;
   }
   for(const p of B){ p.off=clamp(p.off+p.vel*dt,-.5,.8); }
 }
@@ -556,7 +559,7 @@ function collideFree(b,rb,dt){
       if(vn<0){
         b.v=sub(b.v, mul(n,(1+rest)*vn));
         if(c.g.cool<=0 && Math.abs(vn)>S*.25){
-          c.g.cool=.12; c.g.spr.sv-=2.2; c.g.spr.rv+=rand(-1.5,1.5);
+          c.g.cool=.12; c.g.spr.sv-=2.2; c.
           note(c.g.note,.15,'triangle',.6);
           ringAt(q[0],q[1],Math.atan2(n[1],n[0])+Math.PI/2,.8);
           skewKick(n[0],n[1],.5);
@@ -848,7 +851,7 @@ function logoWave(power,withNotes,delay){
 function accentFx(g){
   flashGlyph(g);
   const mv=g.mv;
-  if(mv.t==='boing'){ shake(4); hitStop(.05); g.spr.rv+=1; ball.sq=1; ball.sqV=0; ball.sqA=Math.atan2(-1,-1);
+  if(mv.t==='boing'){ shake(4); hitStop(.05); ball.sq=1; ball.sqV=0; ball.sqA=Math.atan2(-1,-1);
     pokeGlyph(g, mv.a[0], 1.1); skewKick(-1,-.5,1.4); }
   else if(mv.t==='slide'){ pokeGlyph(g, mv.a[0], .5); ball.sq=1; ball.sqV=0; ball.sqA=Math.PI/2; }
   else { pokeGlyph(g, g.cxm, .5); }
@@ -1026,7 +1029,7 @@ cv.addEventListener('pointerdown',e=>{
   for(const g of GL){
     const b=g.wbb;
     if(px>b[0]-6&&px<b[2]+6&&py>b[1]-6&&py<b[3]+6){
-      g.spr.sv-=1.4; g.spr.rv+=rand(-1,1); note(g.note,.2,'triangle',.8); pokeGlyph(g,px,.7);
+      g.spr.sv-=1.4; note(g.note,.2,'triangle',.8); pokeGlyph(g,px,.7);
       sparkle(px,py); interacted=true; elHint.style.opacity='0';
       return;
     }
