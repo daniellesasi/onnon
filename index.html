@@ -47,20 +47,12 @@
     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
   #menu .brand{font-weight:900;letter-spacing:.02em;color:#E53637;text-decoration:none;
     font-size:clamp(15px,2vmin,18px)}
-  #menu .links{margin-left:auto;display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+  #menu .links{margin-left:26px;display:flex;gap:2px;flex-wrap:wrap}
   #menu a{text-decoration:none;font-weight:800;font-size:clamp(10px,1.5vmin,13px);letter-spacing:.14em;
     color:#111;padding:8px 10px;border-radius:8px}
   #menu a:hover{color:#E53637}
   #menu a:focus-visible{outline:2px solid #E53637}
   #menu a[aria-current]{color:#E53637}
-  @media(min-width:880px){
-    #menu{flex-direction:column;align-items:flex-start;left:0;top:0;bottom:0;right:auto;width:200px;
-      padding:28px 26px;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
-    #menu .brand{margin-bottom:22px}
-    #menu .links{margin-left:0;flex-direction:column;align-items:flex-start;gap:4px}
-    #menu a{padding:6px 0}
-    main,footer{margin-left:200px}
-  }
   .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:26px;margin:30px 0 8px}
   .steps div b{display:block;font-size:clamp(26px,3.6vmin,34px);font-weight:900;color:#E53637;margin-bottom:6px}
   .steps div h3{font-size:14px;font-weight:800;letter-spacing:.18em;margin-bottom:8px}
@@ -79,8 +71,13 @@
   .direct{margin-top:22px;font-size:14px;color:#8A8A8A}
   .direct a{color:#E53637;font-weight:700;text-decoration:none}
   body.simon #tag{opacity:0!important}
-  section{padding:clamp(76px,13vh,150px) 24px;scroll-margin-top:64px}
-  section .inner{max-width:680px;margin:0 auto}
+  section{min-height:100vh;min-height:100svh;display:flex;align-items:center;
+    padding:90px 24px 60px;scroll-margin-top:0}
+  @media(min-width:720px){
+    html{scroll-snap-type:y mandatory}
+    #hero,section{scroll-snap-align:start;scroll-snap-stop:always}
+  }
+  section .inner{max-width:680px;margin:0 auto;width:100%}
   section h2{font-size:clamp(30px,5vmin,46px);font-weight:900;letter-spacing:-.015em;color:#111;
     margin-bottom:16px;text-wrap:balance}
   section .eyebrow{font-size:12px;font-weight:800;letter-spacing:.24em;color:#E53637;margin-bottom:12px}
@@ -100,7 +97,9 @@
   .cta:hover{background:#111}
   #formNote{font-size:14px;color:#8A8A8A}
   #formNote.ok{color:#E53637;font-weight:700}
-  footer{padding:34px 24px calc(30px + env(safe-area-inset-bottom));display:flex;gap:14px;flex-wrap:wrap;
+  #contact{position:relative}
+  footer{position:absolute;bottom:0;left:0;right:0;
+    padding:16px 24px calc(14px + env(safe-area-inset-bottom));display:flex;gap:14px;flex-wrap:wrap;
     align-items:baseline;justify-content:space-between;border-top:1px solid #EEE;
     font-size:12px;letter-spacing:.12em;color:#9E9E9E}
   footer b{color:#E53637;font-weight:900}
@@ -196,9 +195,9 @@
     </form>
     <p class="direct">Prefer email? <a href="mailto:dnlssdnl@gmail.com">dnlssdnl@gmail.com</a></p>
   </div>
+  <footer><span><b>ON&amp;ON</b> &mdash; a playable company</span><span>&copy; 2026 &middot; onnon.io</span></footer>
 </section>
 </main>
-<footer><span><b>ON&amp;ON</b> &mdash; a playable company</span><span>&copy; 2026 &middot; onnon.io</span></footer>
 
 <script>
 'use strict';

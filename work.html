@@ -13,19 +13,11 @@
     padding:calc(10px + env(safe-area-inset-top)) 20px 10px;background:rgba(255,255,255,.88);
     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
   #menu .brand{font-weight:900;letter-spacing:.02em;color:#E53637;text-decoration:none;font-size:clamp(15px,2vmin,18px)}
-  #menu .links{margin-left:auto;display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+  #menu .links{margin-left:26px;display:flex;gap:2px;flex-wrap:wrap}
   #menu a{text-decoration:none;font-weight:800;font-size:clamp(10px,1.5vmin,13px);letter-spacing:.14em;color:#111;padding:8px 10px;border-radius:8px}
   #menu a:hover{color:#E53637}
   #menu a:focus-visible{outline:2px solid #E53637}
   #menu a[aria-current]{color:#E53637}
-  @media(min-width:880px){
-    #menu{flex-direction:column;align-items:flex-start;left:0;top:0;bottom:0;right:auto;width:200px;
-      padding:28px 26px;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
-    #menu .brand{margin-bottom:22px}
-    #menu .links{margin-left:0;flex-direction:column;align-items:flex-start;gap:4px}
-    #menu a{padding:6px 0}
-    main,footer{margin-left:200px}
-  }
   main{max-width:980px;margin:0 auto;padding:calc(110px + env(safe-area-inset-top)) 24px 80px}
   .eyebrow{font-size:12px;font-weight:800;letter-spacing:.24em;color:#E53637;margin-bottom:12px}
   h1{font-size:clamp(32px,6vmin,52px);font-weight:900;letter-spacing:-.015em;margin-bottom:14px;text-wrap:balance}
