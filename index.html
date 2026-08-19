@@ -46,7 +46,7 @@
   #hud .b{font-size:clamp(11px,1.5vmin,13px);letter-spacing:.18em;color:#8A8A8A}
   body.simon #hud{display:flex}
   #scrim{position:fixed;inset:0;background:rgba(17,17,17,.42);opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:8}
-  body.panel #scrim{opacity:1;pointer-events:auto}
+  body.panel-open #scrim{opacity:1;pointer-events:auto}
   .panel{position:fixed;z-index:9;left:50%;top:50%;transform:translate(-50%,46%);opacity:0;pointer-events:none;
     width:min(560px,92vw);max-height:min(74vh,660px);overflow-y:auto;background:#fff;border-radius:18px;
     padding:34px 34px 30px;box-shadow:0 24px 80px rgba(0,0,0,.35);transition:transform .4s cubic-bezier(.2,1.2,.3,1),opacity .3s ease}
@@ -563,14 +563,14 @@ const panels={work:document.getElementById('p-work'), loop:document.getElementBy
 let openPanel=null;
 function showPanel(k){
   if(openPanel) panels[openPanel].classList.remove('open');
-  openPanel=k; document.body.classList.add('panel');
+  openPanel=k; document.body.classList.add('panel-open');
   panels[k].classList.add('open');
   note(659.25,.1,'sine',.3);
 }
 function closePanel(){
   if(!openPanel) return;
   panels[openPanel].classList.remove('open'); openPanel=null;
-  document.body.classList.remove('panel');
+  document.body.classList.remove('panel-open');
 }
 document.getElementById('menu').addEventListener('click',e=>{
   const b=e.target.closest('button[data-panel]'); if(b){ gestured=true; showPanel(b.dataset.panel); }
