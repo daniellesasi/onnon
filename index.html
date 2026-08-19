@@ -355,7 +355,7 @@ function stepGestures(dt){
   }
   else if(ball.mood==='sad'){ ball.hopY=S*.01; }
   else { ball.hopY*=Math.max(0,1-dt*10); ball.spin*=Math.max(0,1-dt*14); }
-  if(simon.active&&simon.phase==='input'&&!REDUCED){
+  if(((simon.active&&simon.phase==='input')||(state==='off'&&!ball.hop2))&&!REDUCED){
     ball.idleT-=dt;
     if(ball.idleT<=0){ ball.idleT=rand(1.6,3.2);
       const r=Math.random();
@@ -668,6 +668,28 @@ const simon={active:false, seq:[], idx:0, phase:'idle', t:0, showI:0, round:1, b
 try{ simon.best=parseInt(localStorage.getItem('onon.best')||'0')||0; }catch(e){}
 const elHudR=document.getElementById('hudR'), elHudB=document.getElementById('hudB');
 const rnd5=()=>Math.floor(Math.random()*5);
+function offHopTo(g){ ball.hop2={f:[ball.p[0],ball.p[1]], to:glyphTop(g), t:0, dur:.5, g}; }
+function stepOffBall(dt){
+  if(REDUCED) return;
+  ball.hidden=false;
+  const prev=[ball.p[0],ball.p[1]];
+  if(ball.hop2){
+    const h=ball.hop2; h.t+=dt/h.dur;
+    const t=clamp(h.t,0,1);
+    const apex=Math.min(h.f[1],h.to[1])-S*.17;
+    ball.p=qbez(h.f,[(h.f[0]+h.to[0])/2,apex],h.to,t);
+    if(t>=1){ if(h.g&&h.g.spr) h.g.spr.sv-=2; ball.sq=1; ball.sqV=0; ball.sqA=Math.PI/2;
+      ball.hop2=null; ball.offT=rand(2.2,4.6); }
+  } else {
+    ball.offT=(ball.offT===undefined?1.2:ball.offT)-dt;
+    if(ball.offT<=0){
+      const cur=GL.reduce((best,g)=>Math.abs(g.cxm-ball.p[0])<Math.abs(best.cxm-ball.p[0])?g:best,GL[0]);
+      let g; do{ g=GL[rnd5()]; }while(g===cur);
+      offHopTo(g);
+    }
+  }
+  ball.v=[(ball.p[0]-prev[0])/Math.max(dt,1e-4),(ball.p[1]-prev[1])/Math.max(dt,1e-4)];
+}
 function glyphTop(g){ return [g.cxm, g.wbb[1]-ball.r*1.1]; }
 function setHint(s){ elHint.innerHTML=s; elHint.style.opacity=s?'1':'0'; }
 function simonStart(){
@@ -845,6 +867,7 @@ function flipOff(){
   elCaption.style.opacity='1'; elTag.style.opacity='1'; elOdo.style.opacity='0';
   elMute.style.opacity='0'; elMute.style.pointerEvents='none';
   elHint.style.opacity='0';
+  if(!REDUCED){ ball.hidden=false; ball.hop2=null; ball.offT=.6; }
   thumpDown();
 }
 
@@ -929,6 +952,7 @@ function step(dt){
   if(ball.nextBlink<0){ ball.blink=.12; ball.nextBlink=rand(2.2,4.6); }
   ball.sqV=(ball.sqV||0)+(-(ball.sq)*170-(ball.sqV||0)*10.5)*dt; ball.sq+=ball.sqV*dt;
   if(state==='run'){ simonStep(dt); stepGestures(dt); }
+  if(state==='off'&&!REDUCED){ pushTrail(ball.p[0],ball.p[1],len(ball.v)); stepOffBall(dt); stepGestures(dt); }
   if(state==='run'&&!REDUCED){
     pushTrail(ball.p[0], ball.p[1], len(ball.v));
     ball.prev=[ball.p[0],ball.p[1]];
@@ -1000,7 +1024,7 @@ function draw(){
   }
   if(simon.failT>0) for(const g of GL) drawCache(g,g.red,Math.min(1,simon.failT*1.6),0,0);
   ctx.restore();
-  if(!REDUCED&&state==='run'){
+  if(!REDUCED&&(state==='run'||state==='off')){
     drawTrail();
     for(const m of minis) drawBallMaybeClipped(m.p,m.r,m.v,m.sq,m.sqA,true);
     if(!ball.hidden) drawBallMaybeClipped(ball.p,ball.r,ball.v,ball.sq,ball.sqA,true,true);
@@ -1052,9 +1076,11 @@ function resize(){
     ball.p=[lx+LW*.5, ly+LH*.45];
     if(simon.phase!=='attract') simonShow(.5);
   }
+  if(state==='off' && !REDUCED && GL.length){ ball.hop2=null; ball.p=glyphTop(GL[1]); ball.offT=1.5; }
 }
 window.addEventListener('resize',resize);
 buildOdo(); resize(); elTag.style.opacity='1';
+if(!REDUCED){ ball.p=[lx+LW*.55, Math.min(ly-S*.2,-30)]; offHopTo(G.N1); }
 (function(){ function atTop(){ document.body.classList.toggle('at-top', window.scrollY<40); }
   addEventListener('scroll',atTop,{passive:true}); atTop(); })();
 (function(){var f=document.getElementById('leadform'); if(f) f.action=atob(f.dataset.e);})();
