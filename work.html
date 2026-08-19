@@ -63,15 +63,37 @@
     z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
     opacity:0;pointer-events:none;transition:opacity .3s ease}
   #pscrim.open{opacity:1;pointer-events:auto}
+  #pwrap{perspective:1200px;position:relative}
   #phone{position:relative;height:min(80vh,800px);aspect-ratio:390/820;max-width:92vw;
     border-radius:clamp(28px,5vh,46px);padding:10px;
-    background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.05) 45%,rgba(255,255,255,.14));
-    border:1.5px solid rgba(255,255,255,.45);
-    box-shadow:0 40px 120px rgba(0,0,0,.55), inset 0 0 34px rgba(255,255,255,.07);
-    transform:scale(.92) translateY(16px);transition:transform .35s cubic-bezier(.2,1.4,.3,1)}
-  #pscrim.open #phone{transform:scale(1) translateY(0)}
-  #phone::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-    background:linear-gradient(115deg,rgba(255,255,255,.25) 0%,rgba(255,255,255,0) 30%,rgba(255,255,255,0) 70%,rgba(255,255,255,.12) 100%)}
+    --rx:0deg;--ry:0deg;
+    background:linear-gradient(135deg,rgba(255,255,255,.26),rgba(255,255,255,.05) 45%,rgba(255,255,255,.16));
+    border:1.5px solid rgba(255,255,255,.5);
+    box-shadow:
+      0 60px 140px rgba(0,0,0,.55),
+      0 12px 34px rgba(0,0,0,.35),
+      inset 0 2px 1px rgba(255,255,255,.55),
+      inset 2px 0 1px rgba(255,255,255,.28),
+      inset 0 -2px 2px rgba(30,40,70,.4),
+      inset -2px 0 2px rgba(30,40,70,.22),
+      inset 0 0 34px rgba(255,255,255,.07);
+    transform:rotateX(var(--rx)) rotateY(var(--ry)) scale(.9) translateY(20px);
+    transition:transform .35s cubic-bezier(.2,1.4,.3,1)}
+  #pscrim.open #phone{transform:rotateX(var(--rx)) rotateY(var(--ry)) scale(1) translateY(0)}
+  #pscrim.open #phone.tilting{transition:transform .12s ease-out}
+  #phone::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
+    background:linear-gradient(115deg,rgba(255,255,255,.3) 0%,rgba(255,255,255,0) 28%,rgba(255,255,255,0) 68%,rgba(255,255,255,.14) 100%);
+    transform:translateX(calc(var(--rypx,0px) * 3)) translateY(calc(var(--rxpx,0px) * -2))}
+  #phone::after{content:"";position:absolute;inset:6px;border-radius:clamp(22px,4.4vh,40px);pointer-events:none;z-index:1;
+    border:1px solid rgba(255,255,255,.3);
+    border-bottom-color:rgba(120,140,180,.25)}
+  #pfloor{position:absolute;left:50%;bottom:-34px;transform:translateX(-50%);width:72%;height:26px;
+    background:radial-gradient(50% 100% at 50% 50%,rgba(0,0,0,.5),rgba(0,0,0,0) 70%);
+    filter:blur(6px);pointer-events:none}
+  @media(hover:none){
+    #pscrim.open #phone{animation:pfloat 6s ease-in-out infinite}
+    @keyframes pfloat{0%,100%{transform:rotateX(1.6deg) translateY(0) scale(1)}50%{transform:rotateX(-1.2deg) translateY(-8px) scale(1)}}
+  }
   #phone iframe{width:100%;height:100%;border:0;border-radius:clamp(20px,4vh,36px);background:#000;display:block}
   #pname{color:rgba(255,255,255,.85);font-weight:800;font-size:12px;letter-spacing:.22em}
   #pclose{position:absolute;top:-14px;right:-14px;width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);
@@ -111,9 +133,12 @@
 </main>
 <footer><span><b>ON&amp;ON</b> &mdash; a playable company</span><span><a href="/playable-ads.html" style="color:#9E9E9E;text-decoration:none">what is a playable ad?</a> &middot; &copy; 2026 &middot; onnon.io</span></footer>
 <div id="pscrim" role="dialog" aria-modal="true" aria-label="playable preview">
-  <div id="phone">
-    <button id="pclose" aria-label="close">&#10005;</button>
-    <iframe id="pframe" title="playable ad"></iframe>
+  <div id="pwrap">
+    <div id="phone">
+      <button id="pclose" aria-label="close">&#10005;</button>
+      <iframe id="pframe" title="playable ad"></iframe>
+    </div>
+    <div id="pfloor"></div>
   </div>
   <div id="pname"></div>
 </div>
@@ -132,6 +157,25 @@
     });
   });
   document.getElementById('pclose').addEventListener('click',close);
+  /* 3D glass tilt: follows the pointer over the scrim, flattens over the phone so play stays straight */
+  var phone=document.getElementById('phone');
+  if(matchMedia('(hover:hover)').matches){
+    scrim.addEventListener('pointermove',function(e){
+      if(!scrim.classList.contains('open')) return;
+      var r=phone.getBoundingClientRect();
+      var overPhone = e.clientX>r.left&&e.clientX<r.right&&e.clientY>r.top&&e.clientY<r.bottom;
+      var cx=r.left+r.width/2, cy=r.top+r.height/2;
+      var ry=overPhone?0:Math.max(-9,Math.min(9,(e.clientX-cx)/innerWidth*26));
+      var rx=overPhone?0:Math.max(-7,Math.min(7,(cy-e.clientY)/innerHeight*20));
+      phone.classList.add('tilting');
+      phone.style.setProperty('--rx',rx+'deg');
+      phone.style.setProperty('--ry',ry+'deg');
+      phone.style.setProperty('--rxpx',rx+'px'); phone.style.setProperty('--rypx',ry+'px');
+    });
+    scrim.addEventListener('pointerleave',function(){
+      phone.style.setProperty('--rx','0deg'); phone.style.setProperty('--ry','0deg');
+    });
+  }
   scrim.addEventListener('click',function(e){ if(e.target===scrim) close(); });
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
 })();
