@@ -43,19 +43,23 @@
   .eyebrow{font-size:12px;font-weight:800;letter-spacing:.24em;color:#E53637;margin-bottom:12px}
   h1{font-size:clamp(32px,6vmin,52px);font-weight:900;letter-spacing:-.015em;margin-bottom:14px;text-wrap:balance}
   .lede{font-size:clamp(15px,2.1vmin,18px);line-height:1.6;color:#333;max-width:60ch;margin-bottom:40px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
-  .tile{aspect-ratio:16/10;border-radius:16px;background:#F5F5F5;display:flex;flex-direction:column;
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:26px 18px}
+  .witem{margin:0;display:flex;flex-direction:column;gap:10px;align-items:center}
+  .witem figcaption{font-size:11px;font-weight:800;letter-spacing:.18em;color:#8A8A8A}
+  .tile{aspect-ratio:390/820;width:100%;border-radius:26px;background:#F5F5F5;display:flex;flex-direction:column;
     align-items:center;justify-content:center;gap:8px;position:relative;overflow:hidden}
+  .tile.live{background:#111;padding:0;border:1px solid rgba(0,0,0,.35);
+    box-shadow:0 14px 34px rgba(0,0,0,.18), inset 0 1px 1px rgba(255,255,255,.5)}
+  .pv{display:block;position:absolute;inset:5px;overflow:hidden;border-radius:21px;background:#EFEFEF}
+  .pv iframe{width:390px;height:820px;border:0;transform-origin:0 0;pointer-events:none;display:block}
+  .ptag{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:2;font-style:normal;
+    background:rgba(17,17,17,.75);color:#fff;font-weight:900;font-size:11px;letter-spacing:.18em;
+    padding:8px 16px;border-radius:999px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .tile.live:hover .ptag{background:#E53637}
   .tile b{color:#E53637;font-size:44px;font-weight:900;line-height:1}
   .tile span{font-size:11px;font-weight:800;letter-spacing:.18em;color:#8A8A8A}
   .tile em{font-style:normal;font-size:12px;letter-spacing:.1em;color:#BDBDBD;position:absolute;top:12px;left:14px}
-  a.tile{text-decoration:none;transition:background .2s ease}
-  .tile.live{background:#E53637}
-  .tile.live:hover{background:#111}
-  .tile.live em{color:rgba(255,255,255,.55)}
-  .tile.live strong{color:#fff;font-size:clamp(17px,2.4vmin,22px);font-weight:900;letter-spacing:.06em;text-align:center;padding:0 10px}
-  .tile.live span{color:rgba(255,255,255,.75)}
-  .tile.live i{font-style:normal;color:#fff;font-weight:900;letter-spacing:.2em;font-size:12px;margin-top:8px}
+  a.tile{text-decoration:none}
   .cta{display:inline-block;margin-top:44px;background:#E53637;color:#fff;font-weight:900;letter-spacing:.14em;
     font-size:14px;padding:15px 30px;border-radius:999px;text-decoration:none}
   .cta:hover{background:#111}
@@ -83,7 +87,8 @@
   #pscrim.open #phone.tilting{transition:transform .12s ease-out}
   #phone::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
     background:linear-gradient(115deg,rgba(255,255,255,.3) 0%,rgba(255,255,255,0) 28%,rgba(255,255,255,0) 68%,rgba(255,255,255,.14) 100%);
-    transform:translateX(calc(var(--rypx,0px) * 3)) translateY(calc(var(--rxpx,0px) * -2))}
+    background-size:170% 170%;
+    background-position:calc(50% + var(--rypx,0px) * 4) calc(50% + var(--rxpx,0px) * -3)}
   #phone::after{content:"";position:absolute;inset:6px;border-radius:clamp(22px,4.4vh,40px);pointer-events:none;z-index:1;
     border:1px solid rgba(255,255,255,.3);
     border-bottom-color:rgba(120,140,180,.25)}
@@ -122,12 +127,12 @@
   <h1>Work</h1>
   <p class="lede">Selected playable ads — designed, built, shipped and optimized. These are the real builds &mdash; tap one and play the ad itself. More on the way.</p>
   <div class="grid">
-    <a class="tile live" href="work/wanda/" data-name="WANDERING WANDA"><em>01</em><strong>WANDERING WANDA</strong><span>ROLL THE CITY CLEAN &middot; COLLECT-A-THON</span><i>PLAY &#8594;</i></a>
-    <a class="tile live" href="work/cats/" data-name="FIND THE CATS"><em>02</em><strong>FIND THE CATS</strong><span>BEFORE THE LIGHTS GO OUT &middot; HIDDEN OBJECT</span><i>PLAY &#8594;</i></a>
-    <a class="tile live" href="work/passport/" data-name="PASSPORT CONTROL"><em>03</em><strong>PASSPORT CONTROL</strong><span>FIND IT &middot; STAMP IT</span><i>PLAY &#8594;</i></a>
-    <div class="tile"><em>04</em><b>&amp;</b><span>COMING SOON</span></div>
-    <div class="tile"><em>05</em><b>&amp;</b><span>COMING SOON</span></div>
-    <div class="tile"><em>06</em><b>&amp;</b><span>COMING SOON</span></div>
+    <figure class="witem"><a class="tile live" href="work/wanda/" data-name="WANDERING WANDA"><span class="pv" data-src="work/wanda/"></span><i class="ptag">PLAY &#8594;</i></a><figcaption>WANDERING WANDA</figcaption></figure>
+    <figure class="witem"><a class="tile live" href="work/cats/" data-name="FIND THE CATS"><span class="pv" data-src="work/cats/"></span><i class="ptag">PLAY &#8594;</i></a><figcaption>FIND THE CATS</figcaption></figure>
+    <figure class="witem"><a class="tile live" href="work/passport/" data-name="PASSPORT CONTROL"><span class="pv" data-src="work/passport/"></span><i class="ptag">PLAY &#8594;</i></a><figcaption>PASSPORT CONTROL</figcaption></figure>
+    <figure class="witem"><div class="tile"><b>&amp;</b><span>COMING SOON</span></div><figcaption>&nbsp;</figcaption></figure>
+    <figure class="witem"><div class="tile"><b>&amp;</b><span>COMING SOON</span></div><figcaption>&nbsp;</figcaption></figure>
+    <figure class="witem"><div class="tile"><b>&amp;</b><span>COMING SOON</span></div><figcaption>&nbsp;</figcaption></figure>
   </div>
   <a class="cta" href="/#contact">WANT THE REEL? &#8594;</a>
 </main>
@@ -178,6 +183,21 @@
   }
   scrim.addEventListener('click',function(e){ if(e.target===scrim) close(); });
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+  /* live first-screen previews inside the phone tiles */
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    var pvs=[].slice.call(document.querySelectorAll('.pv[data-src]'));
+    function fit(pv){ var f=pv.firstChild; if(!f) return;
+      var s=Math.min(pv.clientWidth/390, pv.clientHeight/820);
+      f.style.transform='translateX('+((pv.clientWidth-390*s)/2)+'px) scale('+s+')'; }
+    var io=new IntersectionObserver(function(es){ es.forEach(function(en){
+      if(en.isIntersecting && !en.target.firstChild){
+        var f=document.createElement('iframe'); f.src=en.target.dataset.src;
+        f.setAttribute('tabindex','-1'); f.title='game preview'; f.setAttribute('aria-hidden','true');
+        en.target.appendChild(f); fit(en.target); io.unobserve(en.target); }
+    });},{rootMargin:'250px'});
+    pvs.forEach(function(p){ io.observe(p); });
+    addEventListener('resize',function(){ pvs.forEach(fit); });
+  }
 })();
 </script>
 </body>
