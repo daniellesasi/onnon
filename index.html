@@ -489,6 +489,16 @@ function collideFree(b,rb,dt){
 
 /* ============================ particles ============================ */
 let parts=[], trail=[];
+let trailCv=null, tctx=null, disc=null;
+function makeDisc(){
+  disc=document.createElement('canvas'); disc.width=disc.height=64;
+  const d=disc.getContext('2d');
+  const g=d.createRadialGradient(32,32,0,32,32,32);
+  g.addColorStop(0,'rgba(229,54,55,1)');
+  g.addColorStop(.45,'rgba(229,54,55,.85)');
+  g.addColorStop(1,'rgba(229,54,55,0)');
+  d.fillStyle=g; d.fillRect(0,0,64,64);
+}
 function trimParts(){ if(parts.length>420) parts.splice(0,parts.length-420); }
 function ringAt(){}
 function dustBurst(){}
@@ -508,33 +518,31 @@ function drawParts(){
 function pushTrail(x,y,v){ trail.push({x,y,t:0,v:v||0}); if(trail.length>34) trail.shift(); }
 function stepTrail(dt){ for(let i=trail.length-1;i>=0;i--){ trail[i].t+=dt; if(trail[i].t>.35) trail.splice(i,1); } }
 function drawTrail(){
+  if(!tctx||!disc) return;
   const pts=trail.slice();
   pts.push({x:ball.p[0], y:ball.p[1], t:0, v:len(ball.v)});   // live head = the character
   const n=pts.length; if(n<3) return;
-  const Lx=[],Ly=[],Rx=[],Ry=[];
-  let maxW=0;
+  tctx.clearRect(0,0,vw,vh);
+  let drew=false;
   for(let i=0;i<n;i++){
-    const p=pts[i], q=pts[Math.min(n-1,i+1)], o=pts[Math.max(0,i-1)];
-    let dx=q.x-o.x, dy=q.y-o.y; const dl=Math.hypot(dx,dy)||1; dx/=dl; dy/=dl;
+    const p=pts[i];
+    const u=i/(n-1);
     const age=Math.max(0,1-p.t/.35);
     const spd=clamp((p.v||0)/(2.1*S),0,1);
-    const w=ball.r*1.15*Math.pow(i/(n-1),1.25)*age*spd;
-    maxW=Math.max(maxW,w);
-    Lx.push(p.x-dy*w); Ly.push(p.y+dx*w);
-    Rx.push(p.x+dy*w); Ry.push(p.y-dx*w);
+    const w=ball.r*1.3*Math.pow(u,1.2)*age*spd;
+    if(w<.5) continue;
+    drew=true;
+    tctx.globalAlpha=(.16+.44*u)*age;
+    tctx.drawImage(disc, p.x-w, p.y-w, w*2, w*2);
+    // midpoint stamp keeps fast segments continuous
+    if(i>0){ const o=pts[i-1];
+      tctx.drawImage(disc, (p.x+o.x)/2-w, (p.y+o.y)/2-w, w*2, w*2); }
   }
-  if(maxW<.6) return;
-  const gd=ctx.createLinearGradient(pts[0].x,pts[0].y,pts[n-1].x,pts[n-1].y);
-  gd.addColorStop(0,'rgba(229,54,55,0)');
-  gd.addColorStop(.45,'rgba(229,54,55,.35)');
-  gd.addColorStop(1,'rgba(229,54,55,.85)');
-  ctx.beginPath();
-  ctx.moveTo(Lx[0],Ly[0]);
-  for(let i=1;i<n;i++) ctx.lineTo(Lx[i],Ly[i]);
-  ctx.arc(pts[n-1].x,pts[n-1].y, Math.max(.1,ball.r*1.15*Math.max(0,Math.min(1,(pts[n-1].v||0)/(2.1*S)))), 0, Math.PI*2);
-  for(let i=n-1;i>=0;i--) ctx.lineTo(Rx[i],Ry[i]);
-  ctx.closePath();
-  ctx.fillStyle=gd; ctx.fill();
+  tctx.globalAlpha=1;
+  if(!drew) return;
+  ctx.globalAlpha=.9;
+  ctx.drawImage(trailCv,0,0,vw,vh);
+  ctx.globalAlpha=1;
 }
 
 /* ============================ minis ============================ */
@@ -1031,6 +1039,9 @@ function resize(){
   lx=vw/2-LW/2; ly=vh*.43-LH/2;
   stage={left:lx-S*.14, right:lx+LW+S*.14, top:ly-S*.62, floor:ly+LH+S*.02};
   ball.r=Math.max(9,S*.045);
+  if(!disc) makeDisc();
+  trailCv=document.createElement('canvas'); trailCv.width=Math.max(1,vw); trailCv.height=Math.max(1,vh);
+  tctx=trailCv.getContext('2d');
   sw.x=vw/2; sw.y=ly+LH+S*.085; sw.w=S*.135; sw.h=S*.058;
   elCaption.style.top=(sw.y+sw.h/2+16)+'px';
   elTag.style.top=(sw.y+sw.h/2+44)+'px';
