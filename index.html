@@ -326,7 +326,7 @@ function buildGlyphs(){
   for(const p of PD){
     const g={id:p.id, note:p.note, path:new Path2D(p.d), vbb:p.bb,
              mix:1, popped:false, spr:{s:1,sv:0,r:0,rv:0}, cool:0,
-             wv:new Float32Array(16), wvV:new Float32Array(16), wvOn:0,
+             jl:{s:0,sv:0,h:0,hv:0,d:0,dv:0,x0:0}, wvOn:0, wvPx:0,
              ringsVB:RINGS_CACHE[p.id]||(RINGS_CACHE[p.id]=sampleRingsVB(p.d))};
     const a=VW(p.bb[0],p.bb[1]), b=VW(p.bb[2],p.bb[3]);
     g.wbb=[a[0],a[1],b[0],b[1]];
@@ -363,36 +363,38 @@ function bakeSurface(g){
   }
   g.surf=cols;
 }
-const WAVE_N=16;
 function pokeGlyph(g,wx,power){
-  if(REDUCED||!g||!g.red) return;
-  const u=clamp((wx-g.red.ox)/g.red.w,0,1);
-  const i=Math.round(u*(WAVE_N-1));
-  g.wvV[i]-=power*6.0;
-  if(i>0) g.wvV[i-1]-=power*3.2;
-  if(i<WAVE_N-1) g.wvV[i+1]-=power*3.2;
+  if(REDUCED||!g||!g.jl) return;
+  const j=g.jl;
+  j.x0=wx;
+  j.dv+=power*2.1;
+  j.sv+=power*.45;
+  j.hv+=power*.2*Math.sign(wx-g.cxm);
   g.wvOn=1;
+}
+function pokeSquash(g,power){
+  if(REDUCED||!g||!g.jl) return;
+  g.jl.sv+=power*.9; g.wvOn=1;
 }
 function stepWaves(dt){
   for(const g of GL){
     if(!g.wvOn) continue;
-    const w=g.wv, v=g.wvV; let e=0;
-    for(let i=0;i<WAVE_N;i++){
-      const L=w[Math.max(0,i-1)], R=w[Math.min(WAVE_N-1,i+1)];
-      v[i]+=((-w[i])*36+(L+R-2*w[i])*115-v[i]*4.6)*dt;
+    const j=g.jl, H=Math.max(1,g.wbb[3]-g.wbb[1]);
+    j.sv+=(-j.s*95-j.sv*6.2)*dt;  j.s+=j.sv*dt;
+    j.hv+=(-j.h*115-j.hv*6.8)*dt; j.h+=j.hv*dt;
+    j.dv+=(-j.d*130-j.dv*7.2)*dt; j.d+=j.dv*dt;
+    g.wvPx=Math.max(Math.abs(j.d)*S*.2, Math.abs(j.s)*H*.5, Math.abs(j.h)*H*.3);
+    if(g.wvPx<.15 && Math.abs(j.dv)+Math.abs(j.sv)+Math.abs(j.hv)<.02){
+      j.s=j.sv=j.h=j.hv=j.d=j.dv=0; g.wvOn=0; g.wvPx=0;
     }
-    let m=0;
-    for(let i=0;i<WAVE_N;i++){ w[i]+=v[i]*dt; e+=w[i]*w[i]+v[i]*v[i]; m=Math.max(m,Math.abs(w[i])); }
-    g.wvPx=m*S*.20;
-    if(e<1e-5){ w.fill(0); v.fill(0); g.wvOn=0; g.wvPx=0; }
   }
 }
 function waveAt(g,wx){
-  if(!g.wvOn||!g.red) return 0;
-  const u=clamp((wx-g.red.ox)/g.red.w,0,1)*(WAVE_N-1);
-  const i=Math.floor(u), f=u-i;
-  const a=g.wv[i], b=g.wv[Math.min(WAVE_N-1,i+1)];
-  return (a+(b-a)*f)*S*.24;
+  if(!g.wvOn||!g.jl) return 0;
+  const j=g.jl, W=Math.max(1,g.wbb[2]-g.wbb[0]);
+  const sig=W*.16, dx=(wx-j.x0)/sig;
+  const gau=Math.exp(-.5*dx*dx);
+  return j.d*S*.2*gau + j.s*(g.wbb[3]-g.wbb[1])*.4;
 }
 function surfaceAt(g,wx){
   if(!g||!g.surf||!g.red) return null;
@@ -414,17 +416,23 @@ function drawCache(g,c,alpha,dx,dy){
   const ks=1+(k.s-1)*.35;
   ctx.translate(g.cxm+(dx||0), g.cym+(dy||0)); ctx.scale(2-ks, ks);
   if(g.wvOn&&g.wvPx>.5&&g.ringsVB.length){
-    const top=g.wbb[1], hInv=1/Math.max(1,g.wbb[3]-top);
+    const top=g.wbb[1], base=g.wbb[3], H=Math.max(1,base-top), cx0=g.cxm;
+    const j=g.jl, W=Math.max(1,g.wbb[2]-g.wbb[0]), sig=W*.16;
     ctx.beginPath();
     for(const ring of g.ringsVB){
       const n=ring.length/2;
       for(let i=0;i<n;i++){
         const wx0=lx+ring[i*2]*U, wy0=ly+ring[i*2+1]*U;
-        const depth=1-clamp((wy0-top)*hInv,0,1)*.55;
-        const wv=waveAt(g,wx0)*depth;
-        const bulge=(waveAt(g,wx0+7)-waveAt(g,wx0-7))*.35*depth;
-        const X=wx0-bulge-g.cxm, Y=wy0+wv-g.cym;
-        if(i) ctx.lineTo(X,Y); else ctx.moveTo(X,Y);
+        const t=clamp((wy0-top)/H,0,1);
+        const anchor=1-t;
+        let Y=wy0 + (base-wy0)*(-j.s)*.55;
+        let X=wx0 + (wx0-cx0)*(j.s*.5)*anchor;
+        X += j.h*H*.22*anchor;
+        const dxn=(wx0-j.x0)/sig, gau=Math.exp(-.5*dxn*dxn);
+        const wTop=Math.max(0,1-t*1.8);
+        Y += j.d*S*.2*gau*wTop;
+        X += -j.d*S*.09*dxn*gau*wTop;
+        if(i) ctx.lineTo(X-cx0,Y-g.cym); else ctx.moveTo(X-cx0,Y-g.cym);
       }
       ctx.closePath();
     }
@@ -453,7 +461,7 @@ function stepBlob(dt){
     force += stretch*(vd*vd*.85-.28*stretch);
     if(ball.grounded && dy>.45) force -= .11*dy;
     const p=B[i], L=B[(i+n-1)%n], R=B[(i+1)%n];
-    p.vel += ((force-p.off)*85 + (L.off+R.off-2*p.off)*120 - p.vel*6.8)*dt;
+    p.vel += ((force-p.off)*110 + (L.off+R.off-2*p.off)*45 - p.vel*8.5)*dt;
   }
   for(const p of B){ p.off=clamp(p.off+p.vel*dt,-.5,.8); }
 }
@@ -874,8 +882,8 @@ function flashGlyph(g){ g.litT=.4; g.spr.sv-=1.6; note(g.note,.32,'triangle',.95
 }
 function logoWave(power,withNotes,delay){
   GL.forEach(function(g,i){ setTimeout(function(){
-    g.spr.sv-=1.4*(power||1); g.litT=.3;
-    pokeGlyph(g, g.cxm, .8*(power||1));
+    g.litT=.3;
+    pokeSquash(g, .9*(power||1));
     if(withNotes) note(g.note,.22,'triangle',.8);
   }, (delay||0)+i*80); });
 }
