@@ -124,6 +124,7 @@
   #hud .r{font-size:clamp(19px,2.8vmin,26px)} #hud .r b{color:#E53637}
   #hud .b{font-size:clamp(11px,1.5vmin,13px);letter-spacing:.18em;color:#8A8A8A}
   body.simon #hud{display:flex}
+  @keyframes hudpop{50%{transform:translateX(-50%) scale(1.28)}}
 </style>
 
 <nav id="menu" aria-label="site">
@@ -323,14 +324,19 @@ function drawCache(g,c,alpha,dx,dy){
 /* ============================ ball & authored loop ============================ */
 const ball={p:[0,0], prev:[0,0], v:[0,0], r:10, mode:'path', t:0, segI:0,
             hidden:false, sq:0, sqA:0, blink:0, nextBlink:2.5, freeT:0, hist:[],
-            mood:'neutral', moodT:0, moodDur:1, eyeDrift:[0,0], eyeTarget:[0,0], hopY:0, idleT:2};
-function setMood(m,t){ ball.mood=m; ball.moodT=t; ball.moodDur=t; }
+            mood:'neutral', moodT:0, moodDur:1, eyeDrift:[0,0], eyeTarget:[0,0], hopY:0, spin:0, idleT:2};
+function setMood(m,t){ ball.mood=m; ball.moodT=t; ball.moodDur=t; ball.landed=false; if(m!=='cheer') ball.spin=0; }
 function stepGestures(dt){
   ball.moodT-=dt; if(ball.moodT<=0&&ball.mood!=='neutral') ball.mood='neutral';
-  if(ball.mood==='cheer'){ const ph=(ball.moodDur-ball.moodT)/ball.moodDur*Math.PI*4;
-    ball.hopY=-Math.abs(Math.sin(ph))*S*.055; }
+  if(ball.mood==='cheer'){ const u=(ball.moodDur-ball.moodT)/ball.moodDur;
+    ball.hopY=-Math.sin(Math.min(1,u)*Math.PI)*S*.13;
+    ball.spin=u*Math.PI*2;
+    if(!ball.landed && u>=.97){ ball.landed=true;
+      dustBurst(ball.p[0],ball.p[1]+ball.r,6); starBurst(ball.p[0],ball.p[1],5,.8);
+      ball.sq=1; ball.sqA=Math.PI/2; note(196,.1,'sine',.5); }
+  }
   else if(ball.mood==='sad'){ ball.hopY=S*.01; }
-  else ball.hopY*=Math.max(0,1-dt*10);
+  else { ball.hopY*=Math.max(0,1-dt*10); ball.spin*=Math.max(0,1-dt*14); }
   if(simon.active&&simon.phase==='input'&&!REDUCED){
     ball.idleT-=dt;
     if(ball.idleT<=0){ ball.idleT=rand(1.6,3.2);
@@ -409,7 +415,7 @@ function buildPath(){
 function swallowLoop(){
   loops++; try{ localStorage.setItem('onon.loops',''+loops); }catch(e){}
   odoSet(loops); tickSfx(); whoosh(false); ripple(holes[1].x,holes[1].y); 
-  G.O2.spr.sv-=2.6; confetti(holes[1].x,holes[1].y,10);
+  G.O2.spr.sv-=2.6;
   spd=Math.min(1.55, 1+loops*0.015);
 }
 
@@ -463,19 +469,7 @@ function collideFree(b,rb,dt){
 
 /* ============================ particles ============================ */
 let parts=[], trail=[];
-const CONF_COLS=[RED,'#111111','#9E9E9E','#FF8A80'];
 function trimParts(){ if(parts.length>420) parts.splice(0,parts.length-420); }
-function confetti(x,y,n,power){
-  if(REDUCED) return; power=power||1;
-  for(let i=0;i<n;i++){
-    const a=rand(-Math.PI,0)+rand(-.4,.4), sp=rand(180,520)*power;
-    parts.push({k:'c',x,y,vx:Math.cos(a)*sp*rand(.4,1),vy:Math.sin(a)*sp,
-      l:rand(1.1,2.0),t:0,rot:rand(0,6.28),rv:rand(-12,12),
-      w:rand(5,9),h:rand(3,6),shape:Math.random()<.22?2:(Math.random()<.4?1:0),
-      ph:rand(0,6.28),pf:rand(6,11),drift:rand(10,30),col:CONF_COLS[i%4]});
-  }
-  trimParts();
-}
 function dustBurst(x,y,n){ if(REDUCED) return;
   for(let i=0;i<n;i++) parts.push({k:'d',x:x+rand(-6,6),y:y+rand(-3,3),
     vx:rand(-32,32),vy:rand(-48,-6),l:rand(.38,.62),t:0,r:rand(3,7)});
@@ -495,8 +489,6 @@ function stepParts(dt){
     if(p.t>p.l){ parts.splice(i,1); continue; }
     if(p.k==='r'){ p.r+=dt*S*1.1; continue; }
     if(p.k==='n'){ p.y+=p.vy*dt; continue; }
-    if(p.k==='c'){ p.vy+=620*dt; p.vx*=(1-1.6*dt); p.vy*=(1-.55*dt);
-      p.x+=p.vx*dt+Math.sin(p.t*p.pf+p.ph)*p.drift*dt; p.y+=p.vy*dt; p.rot+=p.rv*dt; continue; }
     if(p.k==='s'){ p.vx*=(1-3*dt); p.vy*=(1-3*dt); p.x+=p.vx*dt; p.y+=p.vy*dt; p.rot+=p.rv*dt; continue; }
     p.vy-=26*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.r+=dt*15;
   }
@@ -511,13 +503,6 @@ function drawParts(){
       ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.stroke();
       ctx.globalAlpha=a*.35; ctx.lineWidth=2; ctx.strokeStyle='#111111';
       ctx.beginPath(); ctx.arc(p.x,p.y,p.r*.78,0,7); ctx.stroke(); }
-    else if(p.k==='c'){ ctx.save(); ctx.globalAlpha=Math.min(1,a*1.6); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
-      ctx.fillStyle=p.col;
-      const fl=Math.max(.12,Math.abs(Math.cos(p.t*p.pf+p.ph)));
-      if(p.shape===2) ctx.fillRect(-1.2,-p.h*1.7,2.4,p.h*3.4);
-      else if(p.shape===1){ ctx.beginPath(); ctx.ellipse(0,0,p.w*.5*fl,p.w*.5,0,0,7); ctx.fill(); }
-      else ctx.fillRect(-p.w*.5*fl,-p.h*.5,p.w*fl,p.h);
-      ctx.restore(); }
     else if(p.k==='s'){ ctx.globalAlpha=a; ctx.fillStyle=RED; drawStar(p.x,p.y,p.r*(1-u*.4),p.rot); ctx.fill(); }
     else if(p.k==='n'){ ctx.globalAlpha=Math.min(1,a*1.5); ctx.fillStyle='#111111';
       ctx.font='900 '+Math.round(p.r)+'px -apple-system,Helvetica,Arial,sans-serif';
@@ -558,6 +543,7 @@ function stepMinis(dt){
 /* ============================ ball drawing ============================ */
 function drawBallBody(p,r,vel,sq,sqA,face,isMain){
   if(isMain&&ball.hopY) p=[p[0],p[1]+ball.hopY];
+  if(isMain&&ball.spin){ ctx.save(); ctx.translate(p[0],p[1]); ctx.rotate(ball.spin); ctx.translate(-p[0],-p[1]); }
   const sp=len(vel);
   ctx.save(); ctx.translate(p[0],p[1]);
   const st=clamp(sp/(3.6*S),0,.22), va=Math.atan2(vel[1],vel[0]);
@@ -595,6 +581,7 @@ function drawBallBody(p,r,vel,sq,sqA,face,isMain){
     else{ ctx.beginPath(); ctx.arc(lv[0], r*.22+lv[1], r*.20, .12*Math.PI, .88*Math.PI); ctx.closePath(); ctx.fill(); }
   }
   ctx.restore();
+  if(isMain&&ball.spin) ctx.restore();
 }
 function nearHole(p){
   for(const h of holes){
@@ -668,9 +655,21 @@ function simonStart(){
 }
 function simonShow(delay){ simon.phase='pre'; simon.t=-(delay||.3); simon.showI=-1; simon.idleT=0;
   if(!REDUCED&&ball.mode!=='simon') ball.mode='simon';
+  if(!REDUCED){ ball.sq=.6; ball.sqA=Math.PI/2;
+    const g0=GL[simon.seq[0]];
+    if(g0) ball.eyeTarget=[Math.sign(g0.cxm-ball.p[0]), g0.cym>ball.p[1]?.3:-.3]; }
   setHint('watch&hellip;'); }
 function flashGlyph(g){ g.litT=.4; g.spr.sv-=3.4; note(g.note,.32,'triangle',.95);
-  noteFx(g.cxm+rand(-14,14), g.wbb[1]-6); }
+  noteFx(g.cxm+rand(-14,14), g.wbb[1]-6);
+  const gi=GL.indexOf(g);
+  [gi-1,gi+1].forEach(function(j){ if(GL[j]) setTimeout(function(){ GL[j].spr.sv-=1.1; },55); });
+}
+function logoWave(power,withNotes,delay){
+  GL.forEach(function(g,i){ setTimeout(function(){
+    g.spr.sv-=3.2*(power||1); g.litT=.3;
+    if(withNotes) note(g.note,.22,'triangle',.8);
+  }, (delay||0)+i*80); });
+}
 function accentFx(g){
   flashGlyph(g);
   const mv=g.mv;
@@ -732,12 +731,12 @@ function simonStep(dt){
     if(REDUCED){
       if(simon.t>simon.gap+.25){
         simon.t=0; simon.showI++;
-        if(simon.showI>=simon.seq.length){ simon.phase='input'; simon.idx=0; setHint('your turn'); }
+        if(simon.showI>=simon.seq.length){ simon.phase='input'; simon.idx=0; ball.groundY=ball.p[1]; setHint('your turn'); }
         else flashGlyph(GL[simon.seq[simon.showI]]);
       }
     }else{
       const sg=simon.q[simon.qi];
-      if(!sg){ simon.phase='input'; simon.idx=0; setHint('your turn'); }
+      if(!sg){ simon.phase='input'; simon.idx=0; ball.groundY=ball.p[1]; setHint('your turn'); }
       else{
         if(simon.qt===0&&sg.onStart) sg.onStart();
         simon.qt+=dt;
@@ -762,20 +761,23 @@ function simonTap(px,py){
   simon.idleT=0;
   const want=GL[simon.seq[simon.idx]];
   if(hit===want){
-    flashGlyph(hit); hitStop(.025); starBurst(px,py,4,.7); simon.idx++;
-    if(simon.idx>=simon.seq.length){
+    flashGlyph(hit); simon.idx++;
+    const last = simon.idx>=simon.seq.length;
+    if(!last){ hitStop(.025); starBurst(px,py,4,.7); }
+    else { hit.spr.sv-=6; hitStop(.09); slowMo(.35,.38); starBurst(px,py,8,1.2); }
+    if(last){
       simon.phase='won'; simon.round++;
       if(simon.round-1>simon.best){ simon.best=simon.round-1;
         try{ localStorage.setItem('onon.best',''+simon.best); }catch(err){} }
       elHudR.textContent=simon.round; elHudB.textContent=simon.best;
+      elHudR.parentElement.style.animation='none'; void elHudR.parentElement.offsetWidth;
+      elHudR.parentElement.style.animation='hudpop .45s cubic-bezier(.2,1.6,.4,1)';
       setHint('');
-      hitStop(.06); setMood('cheer',.95);
-      GL.forEach((g,gi)=>setTimeout(()=>{ g.spr.sv-=1.8; },gi*45));
       setTimeout(()=>{ if(!simon.active) return;
-        confetti(ball.p[0], ball.p[1]-ball.r, simon.round%5===0?46:22, simon.round%5===0?1.5:1.1);
-        starBurst(ball.p[0], ball.p[1]-ball.r, simon.round%5===0?10:5, 1.2);
-        [523.25,659.25,783.99,1046.5].forEach((f,i)=>setTimeout(()=>note(f,.14,'triangle',.7),i*70));
-      },150);
+        logoWave(1,true,0);
+        if(simon.round%5===0) logoWave(1.3,true,480);
+        setMood('cheer',.8);
+      },430);
       simon.seq.push(rnd5()); simon.gap=Math.max(.26,simon.gap*.94);
       setTimeout(()=>{ if(simon.active) simonShow(.9); },1200);
     }
@@ -787,6 +789,8 @@ function simonTap(px,py){
 /* ============================ state / boot ============================ */
 let state='off', bootT=0, shakeA=0, hintShown=false, hintT=0, interacted=false, freezeT=0;
 function hitStop(t){ if(!REDUCED) freezeT=Math.max(freezeT,t); }
+let timeScale=1, slowT=0;
+function slowMo(f,d){ if(REDUCED) return; timeScale=f; slowT=d; }
 function shake(a){ if(!REDUCED) shakeA=Math.max(shakeA,a); }
 function flipOn(){
   state='boot'; bootT=0; sw.kv+=6;
@@ -801,7 +805,7 @@ function finishBoot(){
   document.body.classList.add('on');
   elHudB.textContent=simon.best;
   elMute.style.opacity='.85'; elMute.style.pointerEvents='auto';
-  if(!REDUCED){ confetti(lx+LW*.5, ly+LH*.45, 40, 1.4); starBurst(lx+LW*.5, ly+LH*.45, 8, 1.3); }
+
   note(1046.5,.3,'triangle',.8);
   ball.p=[holes[0].x, Math.min(ly-.30*S,-40)];
   simonStart();
@@ -844,7 +848,7 @@ cv.addEventListener('pointerdown',e=>{
       return;
     }
   }
-  if(!REDUCED){ spawnMini(px,py); confetti(px,py,6); }
+  if(!REDUCED){ spawnMini(px,py); starBurst(px,py,4,.7); }
   note(392,.1,'sine',.3);
 });
 cv.addEventListener('pointermove',e=>{ pointer=cvXY(e); });
@@ -961,6 +965,13 @@ function draw(){
   }
   if(simon.failT>0) for(const g of GL) drawCache(g,g.grey,Math.min(1,simon.failT*2.2),0,0);
   if(!REDUCED&&state==='run'){
+    if(simon.active&&(simon.phase==='input'||simon.phase==='won')&&!ball.hidden&&ball.groundY){
+      const lift=Math.max(0,(ball.groundY)-(ball.p[1]+ball.hopY));
+      const k=clamp(1-lift/(S*.28),.4,1);
+      ctx.globalAlpha=.16*k; ctx.fillStyle='#111';
+      ctx.beginPath(); ctx.ellipse(ball.p[0], ball.groundY+ball.r*.95, ball.r*.95*k, ball.r*.3*k, 0,0,7);
+      ctx.fill(); ctx.globalAlpha=1;
+    }
     drawTrail();
     for(const m of minis) drawBallMaybeClipped(m.p,m.r,m.v,m.sq,m.sqA,true);
     if(!ball.hidden) drawBallMaybeClipped(ball.p,ball.r,ball.v,ball.sq,ball.sqA,true,true);
@@ -1019,7 +1030,11 @@ function frame(now){
   if(dt>.1) dt=.1;
   acc+=dt;
   const h=1/120;
-  while(acc>=h){ if(freezeT>0) freezeT-=h; else step(h); acc-=h; }
+  while(acc>=h){
+    if(freezeT>0) freezeT-=h;
+    else if(slowT>0){ slowT-=h; step(h*timeScale); if(slowT<=0) timeScale=1; }
+    else step(h);
+    acc-=h; }
   draw();
   requestAnimationFrame(frame);
 }
