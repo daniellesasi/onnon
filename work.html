@@ -18,6 +18,14 @@
   #menu a:hover{color:#E53637}
   #menu a:focus-visible{outline:2px solid #E53637}
   #menu a[aria-current]{color:#E53637}
+  @media(min-width:880px){
+    #menu{flex-direction:column;align-items:flex-start;left:0;top:0;bottom:0;right:auto;width:200px;
+      padding:28px 26px;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
+    #menu .brand{margin-bottom:22px}
+    #menu .links{margin-left:0;flex-direction:column;align-items:flex-start;gap:4px}
+    #menu a{padding:6px 0}
+    main,footer{margin-left:200px}
+  }
   main{max-width:980px;margin:0 auto;padding:calc(110px + env(safe-area-inset-top)) 24px 80px}
   .eyebrow{font-size:12px;font-weight:800;letter-spacing:.24em;color:#E53637;margin-bottom:12px}
   h1{font-size:clamp(32px,6vmin,52px);font-weight:900;letter-spacing:-.015em;margin-bottom:14px;text-wrap:balance}
@@ -43,6 +51,7 @@
   <div class="links">
     <a href="work.html" aria-current="page">WORK</a>
     <a href="index.html#how">HOW IT WORKS</a>
+    <a href="index.html#make">WHAT WE MAKE</a>
     <a href="index.html#about">ABOUT</a>
     <a href="index.html#contact">CONTACT</a>
   </div>

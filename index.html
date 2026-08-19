@@ -44,6 +44,31 @@
   #menu a:hover{color:#E53637}
   #menu a:focus-visible{outline:2px solid #E53637}
   #menu a[aria-current]{color:#E53637}
+  @media(min-width:880px){
+    #menu{flex-direction:column;align-items:flex-start;left:0;top:0;bottom:0;right:auto;width:200px;
+      padding:28px 26px;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
+    #menu .brand{margin-bottom:22px}
+    #menu .links{margin-left:0;flex-direction:column;align-items:flex-start;gap:4px}
+    #menu a{padding:6px 0}
+    main,footer{margin-left:200px}
+  }
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:26px;margin:30px 0 8px}
+  .steps div b{display:block;font-size:clamp(26px,3.6vmin,34px);font-weight:900;color:#E53637;margin-bottom:6px}
+  .steps div h3{font-size:14px;font-weight:800;letter-spacing:.18em;margin-bottom:8px}
+  .steps div p{font-size:15px;line-height:1.55;color:#333;margin:0}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:28px}
+  .cards div{background:#fff;border:2px solid #EEE;border-radius:16px;padding:24px 22px}
+  .cards div h3{font-size:14px;font-weight:800;letter-spacing:.16em;margin-bottom:10px}
+  .cards div h3::before{content:"& ";color:#E53637}
+  .cards div p{font-size:14.5px;line-height:1.55;color:#333;margin:0}
+  .teaser{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:28px}
+  .teaser a{aspect-ratio:16/10;border-radius:14px;background:#F5F5F5;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:6px;text-decoration:none}
+  .teaser a:hover{background:#EFEFEF}
+  .teaser b{color:#E53637;font-size:34px;font-weight:900;line-height:1}
+  .teaser span{font-size:10px;font-weight:800;letter-spacing:.18em;color:#8A8A8A}
+  .direct{margin-top:22px;font-size:14px;color:#8A8A8A}
+  .direct a{color:#E53637;font-weight:700;text-decoration:none}
   body.simon #tag{opacity:0!important}
   section{padding:clamp(76px,13vh,150px) 24px;scroll-margin-top:64px}
   section .inner{max-width:680px;margin:0 auto}
@@ -83,6 +108,7 @@
   <div class="links">
     <a href="work.html">WORK</a>
     <a href="#how">HOW IT WORKS</a>
+    <a href="#make">WHAT WE MAKE</a>
     <a href="#about">ABOUT</a>
     <a href="#contact">CONTACT</a>
   </div>
@@ -101,10 +127,38 @@
   <div class="inner">
     <div class="eyebrow">HOW IT WORKS</div>
     <h2>Creative that learns.</h2>
-    <div class="loopring">MAKE <i>&#8594;</i> SHIP <i>&#8594;</i> LEARN <i>&#8594;</i> REMAKE <i>&#8635;</i></div>
-    <p>Every playable we ship reports back: what got touched first, where thumbs lingered, where players bailed.</p>
-    <p>That data rewrites the next variant &mdash; new hook, new pacing, new difficulty &mdash; automatically. Winners breed. Losers retire.</p>
+    <div class="steps">
+      <div><b>01</b><h3>MAKE</h3><p>We design and build the playable &mdash; concept, art, code. A real slice of your experience, sized to every network's spec.</p></div>
+      <div><b>02</b><h3>SHIP</h3><p>It goes live instrumented. Every touch, hesitation and drop-off is measured, not guessed.</p></div>
+      <div><b>03</b><h3>LEARN</h3><p>The data ranks what worked: which hook grabbed, which pacing held, which moment converted.</p></div>
+      <div><b>04</b><h3>REMAKE</h3><p>New variants breed from the winners. The losers retire. Then it happens again.</p></div>
+    </div>
     <p>So the ad you're running in month two isn't the ad you launched. It's better. On, and on, and on.</p>
+  </div>
+</section>
+<section id="make" class="alt">
+  <div class="inner">
+    <div class="eyebrow">WHAT WE MAKE</div>
+    <h2>Ads people actually play.</h2>
+    <div class="cards">
+      <div><h3>PLAYABLE ADS</h3><p>Mini-games that sell the game. Built native to the network specs &mdash; AppLovin, Unity, ironSource, Mintegral, Meta.</p></div>
+      <div><h3>INTERACTIVE END CARDS</h3><p>The last screen works harder &mdash; one more tap between the video and the store.</p></div>
+      <div><h3>VARIANT PROGRAMS</h3><p>One concept, dozens of data-driven versions: hooks, difficulty curves, pacing, themes.</p></div>
+      <div><h3>CONCEPTS &amp; PROTOTYPES</h3><p>A playable answer to &ldquo;would this work?&rdquo; &mdash; testable in days, not quarters.</p></div>
+    </div>
+  </div>
+</section>
+<section id="workteaser">
+  <div class="inner">
+    <div class="eyebrow">WHAT'S ON</div>
+    <h2>The work plays.</h2>
+    <p>Not screenshots &mdash; the actual playables, live. Case studies are being wired in.</p>
+    <div class="teaser">
+      <a href="work.html"><b>&amp;</b><span>COMING SOON</span></a>
+      <a href="work.html"><b>&amp;</b><span>COMING SOON</span></a>
+      <a href="work.html"><b>&amp;</b><span>COMING SOON</span></a>
+    </div>
+    <a class="cta" style="margin-top:30px" href="work.html">SEE ALL WORK &#8594;</a>
   </div>
 </section>
 <section id="about" class="alt">
@@ -112,6 +166,7 @@
     <div class="eyebrow">A PLAYABLE COMPANY</div>
     <h2>ON&amp;ON</h2>
     <p>A compact studio that designs, builds and optimizes playable ads for games and apps &mdash; creative craft up front, a data loop underneath.</p>
+    <p>We come from game production, so the ads are built the way games are built: real mechanics, real juice, real telemetry. Small team, senior hands, no handoffs.</p>
     <p>Founded by Danielle Sassy.</p>
   </div>
 </section>
@@ -130,6 +185,7 @@
       <button class="cta" type="submit">SEND IT &#8594;</button>
       <div id="formNote">We reply within a day.</div>
     </form>
+    <p class="direct">Prefer email? <a href="mailto:dnlssdnl@gmail.com">dnlssdnl@gmail.com</a></p>
   </div>
 </section>
 </main>
