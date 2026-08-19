@@ -34,7 +34,6 @@
   #c{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:pointer;outline:none;touch-action:pan-y}
   #c:focus-visible{outline:3px solid #E53637;outline-offset:-3px}
   .ui{position:absolute;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;transition:opacity .45s ease}
-  #caption{font-size:clamp(13px,1.9vmin,17px);letter-spacing:.13em;color:#8A8A8A;white-space:nowrap}
   #tag{opacity:0}
   #tag b{display:block;font-weight:800;font-size:clamp(17px,2.7vmin,25px);letter-spacing:-.01em;color:#111111;text-wrap:balance}
   #tag i{display:block;font-style:normal;margin-top:5px;font-weight:700;font-size:clamp(13px,2vmin,17px);letter-spacing:.06em;color:#E53637}
@@ -158,8 +157,7 @@
 <header id="hero">
   <h1 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">ON&amp;ON &mdash; playable ads that learn</h1>
   <canvas id="c" tabindex="0" aria-label="ON and ON — flip the switch"></canvas>
-  <div class="ui" id="caption">every other ad is off.</div>
-  <div class="ui" id="tag"><b>Playable ads that learn.</b><i>on, and on, and on.</i></div>
+    <div class="ui" id="tag"><b>Playable ads that learn.</b><i>on, and on, and on.</i></div>
   <div class="ui" id="hint">drag the ball &nbsp;·&nbsp; tap the letters</div>
   <div id="odo"><span class="lbl">LOOP</span><span id="digits"></span></div>
   <div id="hud"><span class="r">ROUND <b id="hudR">1</b></span><span class="b">BEST <span id="hudB">0</span></span></div>
@@ -245,7 +243,7 @@ const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const DEBUG=location.hash==='#debug';
 
 const cv=document.getElementById('c'), ctx=cv.getContext('2d');
-const elCaption=document.getElementById('caption'), elTag=document.getElementById('tag'),
+const elTag=document.getElementById('tag'),
       elHint=document.getElementById('hint'), elOdo=document.getElementById('odo'),
       elDigits=document.getElementById('digits'), elMute=document.getElementById('mute');
 let DPR=1, vw=0, vh=0, S=0, U=1, lx=0, ly=0, LW=0, LH=0, stage={};
@@ -843,7 +841,6 @@ function shake(a){ if(!REDUCED) shakeA=Math.max(shakeA,a); }
 function flipOn(){
   state='boot'; bootT=0; sw.kv+=6;
   for(const g of GL){ g.popped=false; }
-  elCaption.style.opacity='0';
   thump();
   if(REDUCED){ for(const g of GL){ g.mix=0; g.popped=true; } finishBoot(); }
 }
@@ -864,7 +861,7 @@ function flipOff(){
   document.body.classList.remove('on');
   for(const g of GL){ g.mix=1; g.popped=false; g.litT=0; }
   minis=[]; trail=[];
-  elCaption.style.opacity='1'; elTag.style.opacity='1'; elOdo.style.opacity='0';
+  elTag.style.opacity='1'; elOdo.style.opacity='0';
   elMute.style.opacity='0'; elMute.style.pointerEvents='none';
   elHint.style.opacity='0';
   if(!REDUCED){ ball.hidden=false; ball.hop2=null; ball.offT=.6; }
@@ -1067,7 +1064,6 @@ function resize(){
   trailCv=document.createElement('canvas'); trailCv.width=Math.max(1,vw); trailCv.height=Math.max(1,vh);
   tctx=trailCv.getContext('2d');
   sw.x=vw/2; sw.y=ly+LH+S*.085; sw.w=S*.135; sw.h=S*.058;
-  elCaption.style.top=(sw.y+sw.h/2+16)+'px';
   elTag.style.top=(sw.y+sw.h/2+44)+'px';
   elHint.style.top=(sw.y+sw.h/2+62)+'px';
   document.getElementById('hud').style.top=(sw.y+sw.h/2+16)+'px';
