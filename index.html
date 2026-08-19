@@ -302,6 +302,11 @@ function buildPath(){
       onEnd(){ swallowLoop(); }}),
     seg(.46, t=>qbez(h2, [lx-.22*S, ly+.26*S], pDrop0, eInOut(t)), {hidden:true, trail:true}),
   ];
+  G.O1.mv={t:'orbit', c:P(178,183), r:183*U+rb};
+  G.O2.mv={t:'orbit', c:P(264,732), r:192*U+rb};
+  G.N1.mv={t:'slide', a:P(452,225), c:P(505,330), b:P(545,470)};
+  G.N2.mv={t:'slide', a:P(622,585), c:P(662,618), b:P(712,652)};
+  G.AMP.mv={t:'boing', a:P(672,450), c:P(742,290), b:P(806,150)};
 }
 function swallowLoop(){
   loops++; try{ localStorage.setItem('onon.loops',''+loops); }catch(e){}
@@ -511,17 +516,46 @@ function simonStart(){
   simon.active=true; simon.seq=[rnd5(),rnd5()]; simon.round=1; simon.gap=.42; simon.failT=0; simon.idleT=0;
   document.body.classList.add('simon');
   elHudR.textContent=simon.round; elHudB.textContent=simon.best;
-  if(!REDUCED){ ball.mode='simon'; ball.hidden=false; ball.hop=null; }
+  if(!REDUCED){ ball.mode='simon'; ball.hidden=false; }
   simonShow(.7);
 }
 function simonShow(delay){ simon.phase='pre'; simon.t=-(delay||.3); simon.showI=-1; simon.idleT=0;
-  if(!REDUCED&&ball.mode!=='simon'){ ball.mode='simon'; ball.hop=null; }
+  if(!REDUCED&&ball.mode!=='simon') ball.mode='simon';
   setHint('watch&hellip;'); }
 function flashGlyph(g){ g.litT=.4; g.spr.sv-=3.4; note(g.note,.32,'triangle',.95); }
-function simonHop(g){
-  if(REDUCED){ flashGlyph(g); simon.t=0; return; }
-  ball.hop={f:[ball.p[0],ball.p[1]], to:glyphTop(g), t:0, g};
-  simon.t=-9;
+function buildMove(g, from, F){
+  const mv=g.mv, segs=[];
+  let entry, end;
+  if(mv.t==='orbit'){
+    entry=[mv.c[0], mv.c[1]-mv.r]; end=entry;
+    segs.push({dur:.6*F, trail:true, fn:t=>{const th=-Math.PI/2+eInOut(t)*Math.PI*2;
+      return [mv.c[0]+Math.cos(th)*mv.r, mv.c[1]+Math.sin(th)*mv.r];}});
+  }else if(mv.t==='slide'){
+    entry=mv.a; end=mv.b;
+    segs.push({dur:.45*F, slide:true, fn:t=>qbez(mv.a,mv.c,mv.b,eIn(t))});
+  }else{
+    entry=mv.a; end=mv.b;
+    segs.push({dur:.34*F, fn:t=>qbez(mv.a,mv.c,mv.b,eOut(t))});
+  }
+  segs[0].onStart=()=>{ flashGlyph(g);
+    if(mv.t==='boing'){ shake(4); g.spr.rv+=2; ball.sq=1; ball.sqA=Math.atan2(-1,-1); dustBurst(entry[0],entry[1],7); }
+    else if(mv.t==='slide'){ dustBurst(entry[0],entry[1],3); ball.sq=1; ball.sqA=Math.PI/2; }
+  };
+  segs.push({dur:.1*F, fn:()=>end});
+  const d=Math.hypot(entry[0]-from[0],entry[1]-from[1]);
+  const travel={dur:clamp(.16+d/(3.4*S),.18,.38)*F,
+    fn:t=>qbez(from,[(from[0]+entry[0])/2, Math.min(from[1],entry[1])-S*.13],entry,t)};
+  return {travel, segs, end};
+}
+function buildShowQueue(){
+  const F=Math.max(.55, simon.gap/.42);
+  const q=[]; let cur=[ball.p[0],ball.p[1]];
+  for(const idx of simon.seq){
+    const m=buildMove(GL[idx],cur,F);
+    q.push(m.travel); for(const sg of m.segs) q.push(sg);
+    cur=m.end;
+  }
+  return q;
 }
 function simonStep(dt){
   for(const g of GL) g.litT=Math.max(0,(g.litT||0)-dt);
@@ -535,17 +569,32 @@ function simonStep(dt){
   }
   simon.t+=dt;
   if(simon.phase==='pre'){
-    if(simon.t>=0){ simon.phase='show'; simon.showI=0; simonHop(GL[simon.seq[0]]); }
+    if(simon.t>=0){
+      simon.phase='show'; simon.showI=0;
+      if(REDUCED){ flashGlyph(GL[simon.seq[0]]); simon.t=0; }
+      else { simon.q=buildShowQueue(); simon.qi=0; simon.qt=0; }
+    }
   }else if(simon.phase==='show'){
-    if(ball.hop){
-      const h=ball.hop; h.t+=dt/.32;
-      const t=clamp(h.t,0,1), apex=Math.min(h.f[1],h.to[1])-S*.16;
-      ball.p=qbez(h.f,[(h.f[0]+h.to[0])/2,apex],h.to,t);
-      if(t>=1){ flashGlyph(h.g); dustBurst(h.to[0],h.to[1]+ball.r,3); ball.hop=null; simon.t=0; }
-    }else if(simon.t>simon.gap){
-      simon.t=0; simon.showI++;
-      if(simon.showI>=simon.seq.length){ simon.phase='input'; simon.idx=0; setHint('your turn'); }
-      else simonHop(GL[simon.seq[simon.showI]]);
+    if(REDUCED){
+      if(simon.t>simon.gap+.25){
+        simon.t=0; simon.showI++;
+        if(simon.showI>=simon.seq.length){ simon.phase='input'; simon.idx=0; setHint('your turn'); }
+        else flashGlyph(GL[simon.seq[simon.showI]]);
+      }
+    }else{
+      const sg=simon.q[simon.qi];
+      if(!sg){ simon.phase='input'; simon.idx=0; setHint('your turn'); }
+      else{
+        if(simon.qt===0&&sg.onStart) sg.onStart();
+        simon.qt+=dt;
+        const tt=clamp(simon.qt/sg.dur,0,1);
+        const prev=[ball.p[0],ball.p[1]];
+        ball.p=sg.fn(tt);
+        ball.v=[(ball.p[0]-prev[0])/Math.max(dt,1e-4),(ball.p[1]-prev[1])/Math.max(dt,1e-4)];
+        if(sg.trail) pushTrail(ball.p[0],ball.p[1]);
+        if(sg.slide){ slideDust+=dt; if(slideDust>.05){ slideDust=0; dustBurst(ball.p[0],ball.p[1]+ball.r*.8,1); } }
+        if(tt>=1){ simon.qi++; simon.qt=0; }
+      }
     }
   }
 }
