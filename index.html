@@ -73,11 +73,15 @@
   .cards div p{font-size:14.5px;line-height:1.55;color:#333;margin:0}
   .teaser{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px;max-width:560px}
   .teaser figure{margin:0;display:flex;flex-direction:column;gap:8px;align-items:center}
-  .teaser a{aspect-ratio:390/820;width:100%;border-radius:20px;background:#111;position:relative;overflow:hidden;
-    display:block;text-decoration:none;border:1px solid rgba(0,0,0,.35);
-    box-shadow:0 10px 26px rgba(0,0,0,.16), inset 0 1px 1px rgba(255,255,255,.5)}
-  .teaser .pv{display:block;position:absolute;inset:4px;overflow:hidden;border-radius:16px;background:#EFEFEF}
-  .teaser .pv iframe{width:390px;height:820px;border:0;transform-origin:0 0;pointer-events:none;display:block}
+  .teaser a{aspect-ratio:390/820;width:100%;border-radius:20px;position:relative;overflow:hidden;
+    display:block;text-decoration:none;padding:5px;
+    background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(255,255,255,.2) 45%,rgba(255,255,255,.5));
+    border:1.5px solid rgba(110,120,145,.4);
+    box-shadow:0 12px 30px rgba(0,0,0,.15), inset 0 2px 1px rgba(255,255,255,.85), inset 0 -2px 2px rgba(30,40,70,.18)}
+  .teaser a::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:linear-gradient(115deg,rgba(255,255,255,.32),rgba(255,255,255,0) 30%,rgba(255,255,255,0) 72%,rgba(255,255,255,.16))}
+  .teaser .pv{display:block;position:absolute;inset:5px;overflow:hidden;border-radius:15px;background:#EFEFEF}
+  .teaser .pv img{width:100%;height:100%;object-fit:cover;display:block}
   .teaser span{font-size:10px;font-weight:800;letter-spacing:.18em;color:#8A8A8A}
   .direct{margin-top:22px;font-size:14px;color:#8A8A8A}
   .direct a{color:#E53637;font-weight:700;text-decoration:none}
@@ -174,9 +178,9 @@
     <h2>The work plays.</h2>
     <p>Not screenshots &mdash; the actual playables, live. Case studies are being wired in.</p>
     <div class="teaser">
-      <figure><a href="work.html" aria-label="Wandering Wanda"><span class="pv" data-src="work/wanda/"></span></a><span>WANDERING WANDA</span></figure>
-      <figure><a href="work.html" aria-label="Find the Cats"><span class="pv" data-src="work/cats/"></span></a><span>FIND THE CATS</span></figure>
-      <figure><a href="work.html" aria-label="Passport Control"><span class="pv" data-src="work/passport/"></span></a><span>PASSPORT CONTROL</span></figure>
+      <figure><a href="work.html" aria-label="Wandering Wanda"><span class="pv"><img src="work/covers/wanda.jpg" alt="" loading="lazy"></span></a><span>WANDERING WANDA</span></figure>
+      <figure><a href="work.html" aria-label="Find the Cats"><span class="pv"><img src="work/covers/cats.jpg" alt="" loading="lazy"></span></a><span>FIND THE CATS</span></figure>
+      <figure><a href="work.html" aria-label="Passport Control"><span class="pv"><img src="work/covers/passport.jpg" alt="" loading="lazy"></span></a><span>PASSPORT CONTROL</span></figure>
     </div>
     <a class="cta" style="margin-top:30px" href="work.html">SEE ALL WORK &#8594;</a>
   </div>
@@ -952,20 +956,4 @@ function frame(now){
 }
 requestAnimationFrame(frame);
 </script>
-<script>
-(function(){
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var pvs=[].slice.call(document.querySelectorAll('.pv[data-src]'));
-  function fit(pv){ var f=pv.firstChild; if(!f) return;
-    var s=Math.min(pv.clientWidth/390, pv.clientHeight/820);
-    f.style.transform='translateX('+((pv.clientWidth-390*s)/2)+'px) scale('+s+')'; }
-  var io=new IntersectionObserver(function(es){ es.forEach(function(en){
-    if(en.isIntersecting && !en.target.firstChild){
-      var f=document.createElement('iframe'); f.src=en.target.dataset.src;
-      f.setAttribute('tabindex','-1'); f.title='game preview'; f.setAttribute('aria-hidden','true');
-      en.target.appendChild(f); fit(en.target); io.unobserve(en.target); }
-  });},{rootMargin:'250px'});
-  pvs.forEach(function(p){ io.observe(p); });
-  addEventListener('resize',function(){ pvs.forEach(fit); });
-})();
-</script>
+
