@@ -303,13 +303,31 @@ const PD=[
 ];
 let G={}, GL=[];
 const VW=(x,y)=>[lx+x*U, ly+y*U];
+const RINGS_CACHE={};
+function sampleRingsVB(d){
+  const NS='http://www.w3.org/2000/svg';
+  const rings=[];
+  const subs=d.match(/M[^M]+/g)||[d];
+  for(const sd of subs){
+    const el=document.createElementNS(NS,'path');
+    el.setAttribute('d',sd);
+    let L=0; try{ L=el.getTotalLength(); }catch(e){ continue; }
+    if(!L||L<8) continue;
+    const n=Math.max(28,Math.min(460,Math.round(L/4)));
+    const ring=new Float32Array(n*2);
+    for(let i=0;i<n;i++){ const pt=el.getPointAtLength(L*i/n); ring[i*2]=pt.x; ring[i*2+1]=pt.y; }
+    rings.push(ring);
+  }
+  return rings;
+}
 
 function buildGlyphs(){
   G={}; GL=[];
   for(const p of PD){
     const g={id:p.id, note:p.note, path:new Path2D(p.d), vbb:p.bb,
              mix:1, popped:false, spr:{s:1,sv:0,r:0,rv:0}, cool:0,
-             wv:new Float32Array(16), wvV:new Float32Array(16), wvOn:0};
+             wv:new Float32Array(16), wvV:new Float32Array(16), wvOn:0,
+             ringsVB:RINGS_CACHE[p.id]||(RINGS_CACHE[p.id]=sampleRingsVB(p.d))};
     const a=VW(p.bb[0],p.bb[1]), b=VW(p.bb[2],p.bb[3]);
     g.wbb=[a[0],a[1],b[0],b[1]];
     g.cxm=(a[0]+b[0])/2; g.cym=(a[1]+b[1])/2;
@@ -328,7 +346,11 @@ function bake(g,color){
   x.fill(g.path,'evenodd');
   return {cn, w, h, ox:b[0]-pad, oy:b[1]-pad};
 }
-function bakeAll(){ for(const g of GL){ g.grey=bake(g,GREY); g.red=bake(g,RED); g.dark=bake(g,DEEP); bakeSurface(g); } }
+function bakeAll(){ for(const g of GL){
+  g.grey=bake(g,GREY); g.grey.color=GREY;
+  g.red=bake(g,RED);   g.red.color=RED;
+  g.dark=bake(g,DEEP); g.dark.color=DEEP;
+  bakeSurface(g); } }
 function bakeSurface(g){
   const c=g.red, W=c.cn.width, H=c.cn.height;
   const d=c.cn.getContext('2d').getImageData(0,0,W,H).data;
@@ -357,7 +379,7 @@ function stepWaves(dt){
     const w=g.wv, v=g.wvV; let e=0;
     for(let i=0;i<WAVE_N;i++){
       const L=w[Math.max(0,i-1)], R=w[Math.min(WAVE_N-1,i+1)];
-      v[i]+=((-w[i])*48+(L+R-2*w[i])*130-v[i]*5.2)*dt;
+      v[i]+=((-w[i])*36+(L+R-2*w[i])*115-v[i]*4.6)*dt;
     }
     let m=0;
     for(let i=0;i<WAVE_N;i++){ w[i]+=v[i]*dt; e+=w[i]*w[i]+v[i]*v[i]; m=Math.max(m,Math.abs(w[i])); }
@@ -370,7 +392,7 @@ function waveAt(g,wx){
   const u=clamp((wx-g.red.ox)/g.red.w,0,1)*(WAVE_N-1);
   const i=Math.floor(u), f=u-i;
   const a=g.wv[i], b=g.wv[Math.min(WAVE_N-1,i+1)];
-  return (a+(b-a)*f)*S*.20;
+  return (a+(b-a)*f)*S*.24;
 }
 function surfaceAt(g,wx){
   if(!g||!g.surf||!g.red) return null;
@@ -391,13 +413,22 @@ function drawCache(g,c,alpha,dx,dy){
   ctx.save(); ctx.globalAlpha=alpha;
   const ks=1+(k.s-1)*.35;
   ctx.translate(g.cxm+(dx||0), g.cym+(dy||0)); ctx.scale(2-ks, ks);
-  if(g.wvOn&&g.wvPx>.8){
-    const STR=44, sw=c.w/STR, srcW=c.cn.width/STR;
-    for(let si=0;si<STR;si++){
-      const off=waveAt(g, c.ox+(si+.5)*sw);
-      ctx.drawImage(c.cn, si*srcW, 0, srcW+1, c.cn.height,
-        c.ox-g.cxm+si*sw, c.oy-g.cym+off, sw+1/DPR, c.h);
+  if(g.wvOn&&g.wvPx>.5&&g.ringsVB.length){
+    const top=g.wbb[1], hInv=1/Math.max(1,g.wbb[3]-top);
+    ctx.beginPath();
+    for(const ring of g.ringsVB){
+      const n=ring.length/2;
+      for(let i=0;i<n;i++){
+        const wx0=lx+ring[i*2]*U, wy0=ly+ring[i*2+1]*U;
+        const depth=1-clamp((wy0-top)*hInv,0,1)*.55;
+        const wv=waveAt(g,wx0)*depth;
+        const bulge=(waveAt(g,wx0+7)-waveAt(g,wx0-7))*.35*depth;
+        const X=wx0-bulge-g.cxm, Y=wy0+wv-g.cym;
+        if(i) ctx.lineTo(X,Y); else ctx.moveTo(X,Y);
+      }
+      ctx.closePath();
     }
+    ctx.fillStyle=c.color; ctx.fill('evenodd');
   } else {
     ctx.drawImage(c.cn, c.ox-g.cxm, c.oy-g.cym, c.w, c.h);
   }
@@ -417,7 +448,7 @@ function stepBlob(dt){
   for(let i=0;i<n;i++){
     const a=i/n*Math.PI*2, dx=Math.cos(a), dy=Math.sin(a);
     let force=0;
-    force += -ball.sq*.6*Math.cos(2*(a-ball.sqA));
+    force += -ball.sq*.85*Math.cos(2*(a-ball.sqA));
     const vd=dx*ivx+dy*ivy;
     force += stretch*(vd*vd*.85-.28*stretch);
     if(ball.grounded && dy>.45) force -= .11*dy;
