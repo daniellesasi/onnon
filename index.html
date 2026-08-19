@@ -33,19 +33,11 @@
   #mute:focus-visible{outline:3px solid #E53637;outline-offset:2px}
   #foot{position:fixed;right:16px;bottom:calc(12px + env(safe-area-inset-bottom));font-size:11px;letter-spacing:.12em;
     color:#BDBDBD;pointer-events:none}
-  #menu{position:fixed;top:calc(16px + env(safe-area-inset-top));left:18px;display:flex;gap:2px;z-index:5;
-    opacity:0;pointer-events:none;transition:opacity .5s ease}
+  #menu{position:fixed;top:calc(16px + env(safe-area-inset-top));left:18px;display:flex;gap:2px;z-index:5}
   #menu button{border:none;background:none;cursor:pointer;font:inherit;font-weight:800;
     font-size:clamp(11px,1.5vmin,13px);letter-spacing:.14em;color:#111;padding:8px 10px;border-radius:8px}
   #menu button:hover{color:#E53637}
   #menu button:focus-visible{outline:2px solid #E53637}
-  body.on #menu{opacity:1;pointer-events:auto}
-  #play{position:fixed;left:50%;transform:translateX(-50%);border:2.5px solid #111;background:#fff;color:#111;
-    font:inherit;font-weight:900;font-size:clamp(12px,1.7vmin,15px);letter-spacing:.18em;padding:10px 24px;
-    border-radius:999px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .5s ease,transform .15s ease,color .15s ease,border-color .15s ease;z-index:5}
-  #play:hover{transform:translateX(-50%) scale(1.06);border-color:#E53637;color:#E53637}
-  #play:focus-visible{outline:2px solid #E53637;outline-offset:2px}
-  body.on #play.avail{opacity:1;pointer-events:auto}
   body.simon #tag{opacity:0!important}
   body.simon #odo{opacity:0!important}
   #hud{position:fixed;left:50%;transform:translateX(-50%);display:none;align-items:baseline;gap:14px;z-index:4;
@@ -84,11 +76,10 @@
 <div id="foot">a playable company</div>
 <nav id="menu" aria-label="site">
   <button data-panel="work">WORK</button>
-  <button data-panel="loop">THE LOOP</button>
+  <button data-panel="loop">HOW IT WORKS</button>
   <button data-panel="about">ABOUT</button>
   <button data-panel="contact">CONTACT</button>
 </nav>
-<button id="play">&#9654;&nbsp; PLAY</button>
 <div id="hud"><span class="r">ROUND <b id="hudR">1</b></span><span class="b">BEST <span id="hudB">0</span></span></div>
 <div id="scrim"></div>
 <section class="panel" id="p-work" role="dialog" aria-modal="true" aria-label="Work">
@@ -491,25 +482,20 @@ function odoSet(n,instant){
 /* ============================ simon ============================ */
 const simon={active:false, seq:[], idx:0, phase:'idle', t:0, showI:0, round:1, best:0, gap:.42, failT:0};
 try{ simon.best=parseInt(localStorage.getItem('onon.best')||'0')||0; }catch(e){}
-const elHudR=document.getElementById('hudR'), elHudB=document.getElementById('hudB'),
-      elPlay=document.getElementById('play');
+const elHudR=document.getElementById('hudR'), elHudB=document.getElementById('hudB');
 const rnd5=()=>Math.floor(Math.random()*5);
 function glyphTop(g){ return [g.cxm, g.wbb[1]-ball.r*1.1]; }
 function setHint(s){ elHint.innerHTML=s; elHint.style.opacity=s?'1':'0'; }
 function simonStart(){
-  simon.active=true; simon.seq=[rnd5(),rnd5()]; simon.round=1; simon.gap=.42; simon.failT=0;
-  document.body.classList.add('simon'); elPlay.classList.remove('avail');
+  simon.active=true; simon.seq=[rnd5(),rnd5()]; simon.round=1; simon.gap=.42; simon.failT=0; simon.idleT=0;
+  document.body.classList.add('simon');
   elHudR.textContent=simon.round; elHudB.textContent=simon.best;
   if(!REDUCED){ ball.mode='simon'; ball.hidden=false; ball.hop=null; }
   simonShow(.7);
 }
-function simonShow(delay){ simon.phase='pre'; simon.t=-(delay||.3); simon.showI=-1; setHint('watch&hellip;'); }
-function simonEnd(){
-  simon.active=false; simon.phase='idle'; document.body.classList.remove('simon');
-  if(state==='run') elPlay.classList.add('avail');
-  setHint('');
-  if(!REDUCED){ ball.mode='warp'; ball.wt=0; ball.wf=[ball.p[0],ball.p[1]]; whoosh(true); }
-}
+function simonShow(delay){ simon.phase='pre'; simon.t=-(delay||.3); simon.showI=-1; simon.idleT=0;
+  if(!REDUCED&&ball.mode!=='simon'){ ball.mode='simon'; ball.hop=null; }
+  setHint('watch&hellip;'); }
 function flashGlyph(g){ g.litT=.4; g.spr.sv-=3.4; note(g.note,.32,'triangle',.95); }
 function simonHop(g){
   if(REDUCED){ flashGlyph(g); simon.t=0; return; }
@@ -519,7 +505,13 @@ function simonHop(g){
 function simonStep(dt){
   for(const g of GL) g.litT=Math.max(0,(g.litT||0)-dt);
   simon.failT=Math.max(0,simon.failT-dt);
-  if(!simon.active) return;
+  if(!simon.active||openPanel) return;
+  if(simon.phase==='input'){
+    simon.idleT+=dt;
+    if(simon.idleT>12){ simon.phase='attract'; simon.idleT=0;
+      if(!REDUCED){ ball.mode='path'; ball.t=0; ball.segI=0; }
+      setHint('tap any letter to keep playing'); }
+  }
   simon.t+=dt;
   if(simon.phase==='pre'){
     if(simon.t>=0){ simon.phase='show'; simon.showI=0; simonHop(GL[simon.seq[0]]); }
@@ -537,11 +529,13 @@ function simonStep(dt){
   }
 }
 function simonTap(e){
-  if(simon.phase!=='input') return;
+  if(simon.phase!=='input'&&simon.phase!=='attract') return;
   let hit=null;
   for(const g of GL){ const b=g.wbb;
     if(e.clientX>b[0]-6&&e.clientX<b[2]+6&&e.clientY>b[1]-6&&e.clientY<b[3]+6){ hit=g; break; } }
   if(!hit) return;
+  if(simon.phase==='attract'){ simonShow(.5); return; }
+  simon.idleT=0;
   const want=GL[simon.seq[simon.idx]];
   if(hit===want){
     flashGlyph(hit); sparkle(e.clientX,e.clientY); simon.idx++;
@@ -563,15 +557,11 @@ function simonTap(e){
     setTimeout(()=>{ if(simon.active) simonShow(.7); },850);
   }
 }
-elPlay.addEventListener('click',e=>{ e.stopPropagation(); gestured=true; audio();
-  if(state==='run'&&!simon.active) simonStart(); });
-
 /* ============================ panels / menu ============================ */
 const panels={work:document.getElementById('p-work'), loop:document.getElementById('p-loop'),
               about:document.getElementById('p-about'), contact:document.getElementById('p-contact')};
 let openPanel=null;
 function showPanel(k){
-  if(simon.active) simonEnd();
   if(openPanel) panels[openPanel].classList.remove('open');
   openPanel=k; document.body.classList.add('panel');
   panels[k].classList.add('open');
@@ -601,23 +591,23 @@ function flipOn(){
 }
 function finishBoot(){
   state='run';
-  ball.mode='path'; ball.t=0; ball.segI=0; ball.hidden=false;
-  document.body.classList.add('on'); elPlay.classList.add('avail');
+  ball.hidden=false;
+  document.body.classList.add('on');
   elHudB.textContent=simon.best;
-  elTag.style.opacity='1'; elOdo.style.opacity='1';
   elMute.style.opacity='.85'; elMute.style.pointerEvents='auto';
-  hintT=0;
   if(!REDUCED) confetti(lx+LW*.5, ly+LH*.45, 26);
   note(1046.5,.3,'triangle',.8);
+  ball.p=[holes[0].x, Math.min(ly-.30*S,-40)];
+  simonStart();
 }
 function flipOff(){
   state='off'; sw.kv-=6;
   if(simon.active){ simon.active=false; simon.phase='idle'; document.body.classList.remove('simon'); }
   closePanel();
-  document.body.classList.remove('on'); elPlay.classList.remove('avail');
+  document.body.classList.remove('on');
   for(const g of GL){ g.mix=0; g.popped=false; g.litT=0; }
   minis=[]; trail=[];
-  elCaption.style.opacity='1'; elTag.style.opacity='0'; elOdo.style.opacity='0';
+  elCaption.style.opacity='1'; elTag.style.opacity='1'; elOdo.style.opacity='0';
   elMute.style.opacity='0'; elMute.style.pointerEvents='none';
   elHint.style.opacity='0';
   thumpDown();
@@ -796,14 +786,13 @@ function resize(){
   ball.r=Math.max(9,S*.045);
   sw.x=vw/2; sw.y=ly+LH+S*.085; sw.w=S*.135; sw.h=S*.058;
   elCaption.style.top=(sw.y+sw.h/2+16)+'px';
-  elTag.style.top=(sw.y+sw.h/2+14)+'px';
+  elTag.style.top=(sw.y+sw.h/2+44)+'px';
   elHint.style.top=(sw.y+sw.h/2+62)+'px';
-  elPlay.style.top=(sw.y+sw.h/2+96)+'px';
   document.getElementById('hud').style.top=(sw.y+sw.h/2+16)+'px';
   buildGlyphs(); bakeAll(); buildPath(); buildColliders();
 }
 window.addEventListener('resize',resize);
-buildOdo(); resize();
+buildOdo(); resize(); elTag.style.opacity='1';
 
 let last=performance.now(), acc=0;
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) last=performance.now(); });
