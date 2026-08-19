@@ -329,7 +329,7 @@ function bake(g,color){
   x.fill(g.path,'evenodd');
   return {cn, w, h, ox:b[0]-pad, oy:b[1]-pad};
 }
-function bakeAll(){ for(const g of GL){ g.grey=bake(g,GREY); g.red=bake(g,RED); g.dark=bake(g,DEEP); g.lit=bake(g,'#FF7A6C'); } }
+function bakeAll(){ for(const g of GL){ g.grey=bake(g,GREY); g.red=bake(g,RED); g.dark=bake(g,DEEP); } }
 function drawCache(g,c,alpha,dx,dy){
   if(alpha<=0.003) return;
   const k=g.spr;
@@ -488,7 +488,7 @@ function collideFree(b,rb,dt){
 }
 
 /* ============================ particles ============================ */
-let parts=[], trail=[], ghosts=[];
+let parts=[], trail=[];
 function trimParts(){ if(parts.length>420) parts.splice(0,parts.length-420); }
 function ringAt(){}
 function dustBurst(){}
@@ -506,20 +506,24 @@ function drawParts(){
   ctx.globalAlpha=1;
 }
 function pushTrail(x,y){ trail.push({x,y,t:0}); if(trail.length>26) trail.shift(); }
-function pushGhost(x,y,r){ ghosts.push({x,y,r,t:0}); if(ghosts.length>10) ghosts.shift(); }
-function stepGhosts(dt){ for(let i=ghosts.length-1;i>=0;i--){ ghosts[i].t+=dt; if(ghosts[i].t>.16) ghosts.splice(i,1); } }
-function drawGhosts(){
-  for(const g of ghosts){ const a=1-g.t/.16;
-    ctx.globalAlpha=a*.16; ctx.fillStyle=RED;
-    ctx.beginPath(); ctx.arc(g.x,g.y,g.r*(.75+.2*a),0,7); ctx.fill(); }
-  ctx.globalAlpha=1;
-}
 function stepTrail(dt){ for(let i=trail.length-1;i>=0;i--){ trail[i].t+=dt; if(trail[i].t>.30) trail.splice(i,1); } }
 function drawTrail(){
-  for(let i=1;i<trail.length;i++){ const q=trail[i], p=trail[i-1], a=(1-q.t/.30)*(i/trail.length);
-    ctx.strokeStyle=RED; ctx.globalAlpha=a*.35; ctx.lineWidth=ball.r*1.7*(i/trail.length); ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke(); }
-  ctx.globalAlpha=1;
+  const n=trail.length; if(n<3) return;
+  const Lx=[],Ly=[],Rx=[],Ry=[];
+  for(let i=0;i<n;i++){
+    const p=trail[i], q=trail[Math.min(n-1,i+1)], o=trail[Math.max(0,i-1)];
+    let dx=q.x-o.x, dy=q.y-o.y; const dl=Math.hypot(dx,dy)||1; dx/=dl; dy/=dl;
+    const age=Math.max(0,1-p.t/.30);
+    const w=ball.r*.92*Math.pow(i/(n-1),1.35)*age;
+    Lx.push(p.x-dy*w); Ly.push(p.y+dx*w);
+    Rx.push(p.x+dy*w); Ry.push(p.y-dx*w);
+  }
+  ctx.beginPath();
+  ctx.moveTo(Lx[0],Ly[0]);
+  for(let i=1;i<n;i++) ctx.lineTo(Lx[i],Ly[i]);
+  for(let i=n-1;i>=0;i--) ctx.lineTo(Rx[i],Ry[i]);
+  ctx.closePath();
+  ctx.fillStyle=RED; ctx.fill();
 }
 
 /* ============================ minis ============================ */
@@ -747,7 +751,6 @@ function simonStep(dt){
         ball.v=[(ball.p[0]-prev[0])/Math.max(dt,1e-4),(ball.p[1]-prev[1])/Math.max(dt,1e-4)];
         if(sg.trail) pushTrail(ball.p[0],ball.p[1]);
         if(sg.slide){ slideDust+=dt; if(slideDust>.04){ slideDust=0; pushTrail(ball.p[0],ball.p[1]+ball.r*.6); } }
-        if(len(ball.v)>1.7*S) pushGhost(ball.p[0],ball.p[1],ball.r);
         if(tt>=1){ if(sg.onEnd) sg.onEnd(); simon.qi++; simon.qt=0; }
       }
     }
@@ -925,7 +928,7 @@ function step(dt){
       ball.v=[(ball.p[0]-ball.prev[0])/Math.max(dt,1e-4),(ball.p[1]-ball.prev[1])/Math.max(dt,1e-4)];
       if(seg.slide){ slideDust+=dt; if(slideDust>.04){ slideDust=0;
         pushTrail(ball.p[0]-seg.slide.n[0]*ball.r*.5, ball.p[1]-seg.slide.n[1]*ball.r*.5); } }
-      if(seg.trail || len(ball.v)>2.4*S){ pushTrail(ball.p[0],ball.p[1]); pushGhost(ball.p[0],ball.p[1],ball.r); }
+      if(seg.trail || len(ball.v)>2.4*S)pushTrail(ball.p[0],ball.p[1]);
     }else if(ball.mode==='drag'){
       ball.hidden=false;
       const tx=clamp(pointer[0],stage.left,stage.right), ty=clamp(pointer[1],stage.top,stage.floor);
@@ -936,7 +939,7 @@ function step(dt){
     }else if(ball.mode==='free'){
       collideFree(ball,ball.r,dt);
       ball.freeT+=dt;
-      if(len(ball.v)>2.2*S){ pushTrail(ball.p[0],ball.p[1]); pushGhost(ball.p[0],ball.p[1],ball.r); }
+      if(len(ball.v)>2.2*S)pushTrail(ball.p[0],ball.p[1]);
       if(ball.freeT>2.8 || (ball.freeT>1&&Math.abs(ball.p[1]-(stage.floor-ball.r))<2&&len(ball.v)<S*.12)){
         ball.mode='warp'; ball.wt=0; ball.wf=[ball.p[0],ball.p[1]]; whoosh(true);
       }
@@ -954,7 +957,7 @@ function step(dt){
     if(hintT>2.5&&!hintShown){ hintShown=true; elHint.style.opacity='1'; }
     if(hintT>9){ elHint.style.opacity='0'; }
   }
-  stepParts(dt); stepTrail(dt); stepGhosts(dt);
+  stepParts(dt); stepTrail(dt);
 }
 
 /* ============================ draw ============================ */
@@ -971,7 +974,6 @@ function draw(){
     const redA=Math.max(g.mix, litBoost);
     if(redA<0.997) drawCache(g,g.grey,1-redA,0,0);
     drawCache(g,g.red,redA,0,0);
-    if(g.litT>0) drawCache(g,g.lit,Math.min(1,g.litT*3.2),0,0);
     if(discoT>0){
       const u=1-discoT/discoDur;
       const env=Math.min(1, discoT/.35, u*6);
@@ -986,7 +988,7 @@ function draw(){
   if(simon.failT>0) for(const g of GL) drawCache(g,g.red,Math.min(1,simon.failT*1.6),0,0);
   ctx.restore();
   if(!REDUCED&&state==='run'){
-    drawTrail(); drawGhosts();
+    drawTrail();
     for(const m of minis) drawBallMaybeClipped(m.p,m.r,m.v,m.sq,m.sqA,true);
     if(!ball.hidden) drawBallMaybeClipped(ball.p,ball.r,ball.v,ball.sq,ball.sqA,true,true);
   }
