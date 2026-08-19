@@ -16,7 +16,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="canonical" href="https://onnon.io/">
 <script type="application/ld+json">[
-{"@context":"https://schema.org","@type":"Organization","@id":"https://onnon.io/#org","name":"ON&ON","url":"https://onnon.io/","logo":"https://onnon.io/icon-192.png","description":"Playable ads studio — data-driven, personalized playable ads and interactive end cards that learn from every impression.","email":"dnlssdnl@gmail.com","knowsAbout":["playable ads","interactive end cards","mobile game advertising","user acquisition creative"]},
+{"@context":"https://schema.org","@type":"Organization","@id":"https://onnon.io/#org","name":"ON&ON","url":"https://onnon.io/","logo":"https://onnon.io/icon-192.png","description":"Playable ads studio — data-driven, personalized playable ads and interactive end cards that learn from every impression.","knowsAbout":["playable ads","interactive end cards","mobile game advertising","user acquisition creative"]},
 {"@context":"https://schema.org","@type":"WebSite","@id":"https://onnon.io/#site","name":"ON&ON","url":"https://onnon.io/","publisher":{"@id":"https://onnon.io/#org"}}
 ]</script>
 <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='30' fill='%23E53637'/><ellipse cx='32' cy='32' rx='11' ry='14' fill='%23FBF7F0'/></svg>">
@@ -198,7 +198,7 @@
     <div class="eyebrow">SWITCH US ON</div>
     <h2>Let's talk.</h2>
     <p>Tell us what you're running and what it needs to do. We'll come back with a playable answer.</p>
-    <form action="https://formsubmit.co/dnlssdnl@gmail.com" method="POST">
+    <form id="leadform" method="POST" data-e="aHR0cHM6Ly9mb3Jtc3VibWl0LmNvL2RubHNzZG5sQGdtYWlsLmNvbQ==">
       <input type="hidden" name="_subject" value="New lead from onnon.io">
       <input type="hidden" name="_next" value="https://onnon.io/#thanks">
       <input type="text" name="_honey" style="display:none">
@@ -208,7 +208,6 @@
       <button class="cta" type="submit">SEND IT &#8594;</button>
       <div id="formNote">We reply within a day.</div>
     </form>
-    <p class="direct">Prefer email? <a href="mailto:dnlssdnl@gmail.com">dnlssdnl@gmail.com</a></p>
   </div>
   <footer><span><b>ON&amp;ON</b> &mdash; a playable company</span><span><a href="playable-ads.html" style="color:#9E9E9E;text-decoration:none">what is a playable ad?</a> &middot; &copy; 2026 &middot; onnon.io</span></footer>
 </section>
@@ -937,6 +936,7 @@ function resize(){
 }
 window.addEventListener('resize',resize);
 buildOdo(); resize(); elTag.style.opacity='1';
+(function(){var f=document.getElementById('leadform'); if(f) f.action=atob(f.dataset.e);})();
 if(location.hash==='#thanks'){
   const n=document.getElementById('formNote');
   if(n){ n.textContent="Sent. We're on it \u2014 expect a reply within a day."; n.classList.add('ok'); }
