@@ -36,6 +36,21 @@
   #menu .links{margin-left:26px;display:flex;gap:2px;flex-wrap:wrap}
   #menu a{text-decoration:none;font-weight:800;font-size:clamp(10px,1.5vmin,13px);letter-spacing:.14em;color:#111;padding:8px 10px;border-radius:8px}
   #menu a:hover{color:#E53637}
+  #burger{display:none;margin-left:auto;width:40px;height:40px;border:none;background:none;cursor:pointer;padding:8px;border-radius:8px}
+  #burger span{display:block;height:2.5px;background:#111;border-radius:2px;margin:5px 0;transition:transform .25s ease,opacity .2s ease}
+  #burger:focus-visible{outline:2px solid #E53637}
+  @media(max-width:719px){
+    #burger{display:block}
+    #menu .links{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;
+      background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+      padding:8px 12px 16px;border-bottom:1px solid #EEE;margin-left:0}
+    body.nav-open #menu .links{display:flex}
+    body.nav-open #burger span:nth-child(1){transform:translateY(7.5px) rotate(45deg)}
+    body.nav-open #burger span:nth-child(2){opacity:0}
+    body.nav-open #burger span:nth-child(3){transform:translateY(-7.5px) rotate(-45deg)}
+    #menu a{padding:12px 10px;font-size:13px}
+  }
+
   main{max-width:680px;margin:0 auto;padding:calc(110px + env(safe-area-inset-top)) 24px 80px}
   .eyebrow{font-size:12px;font-weight:800;letter-spacing:.24em;color:#E53637;margin-bottom:12px}
   h1{font-size:clamp(30px,5.4vmin,46px);font-weight:900;letter-spacing:-.015em;margin-bottom:16px;text-wrap:balance}
@@ -58,6 +73,7 @@
     <a href="/#about">ABOUT</a>
     <a href="/#contact">CONTACT</a>
   </div>
+  <button id="burger" aria-label="menu" aria-expanded="false"><span></span><span></span><span></span></button>
 </nav>
 <main>
   <div class="eyebrow">PLAYABLE ADS, EXPLAINED</div>
@@ -90,5 +106,12 @@
   <a class="cta" href="/#contact">TALK TO US &#8594;</a>
 </main>
 <footer><b>ON&amp;ON</b> &mdash; a playable company &middot; <a href="/" style="color:#9E9E9E">onnon.io</a></footer>
+<script>
+(function(){var b=document.getElementById('burger'); if(!b) return;
+ b.addEventListener('click',function(){var o=document.body.classList.toggle('nav-open'); b.setAttribute('aria-expanded',o);});
+ document.querySelectorAll('#menu .links a').forEach(function(a){a.addEventListener('click',function(){
+   document.body.classList.remove('nav-open'); b.setAttribute('aria-expanded','false');});});
+})();
+</script>
 </body>
 </html>
