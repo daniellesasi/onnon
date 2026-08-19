@@ -392,7 +392,9 @@ function bakeSurface(g){
   g.surf=cols;
 }
 function pokeGlyph(g,wx,power){
-  if(REDUCED||!g||!g.lat) return;
+  if(REDUCED||!g) return;
+  if(state!=='off'){ if(g.spr) g.spr.sv-=power*2.6; return; }
+  if(!g.lat) return;
   const L=g.lat, fi=clamp((wx-L.x0)/L.w,0,1)*(L.CX-1);
   for(let i=0;i<L.CX;i++){
     const wgt=Math.max(0,1-Math.abs(i-fi)/1.4);
@@ -403,7 +405,9 @@ function pokeGlyph(g,wx,power){
   g.wvOn=1;
 }
 function pokeSquash(g,power){
-  if(REDUCED||!g||!g.lat) return;
+  if(REDUCED||!g) return;
+  if(state!=='off'){ if(g.spr) g.spr.sv-=power*2.4; return; }
+  if(!g.lat) return;
   const L=g.lat;
   for(let i=0;i<L.CX;i++) L.nodes[i].vy+=power*240;
   g.wvOn=1;
@@ -462,9 +466,9 @@ function drawCache(g,c,alpha,dx,dy){
   if(alpha<=0.003) return;
   const k=g.spr;
   ctx.save(); ctx.globalAlpha=alpha;
-  const ks=1+(k.s-1)*.35;
+  const ks=1+(k.s-1)*(state==='off'?.35:1);
   ctx.translate(g.cxm+(dx||0), g.cym+(dy||0)); ctx.scale(2-ks, ks);
-  if(g.wvOn&&g.wvPx>.5&&g.ringsVB.length){
+  if(state==='off'&&g.wvOn&&g.wvPx>.5&&g.ringsVB.length){
     const L=g.lat, N=L.nodes, CX=L.CX;
     ctx.beginPath();
     for(let ri=0;ri<g.ringsVB.length;ri++){
@@ -883,7 +887,7 @@ function stepOffBall(dt){
           if(g.spr) g.spr.sv-=1.1*imp;
           ball.sq=imp; ball.sqV=0; ball.sqA=Math.PI/2;
           skewKick(0,.4,imp*.5);
-          ball.hopPhase=null; ball.perchG=g; ball.offT=rand(2.2,4.6);
+          ball.hopPhase=null; ball.perchG=g; ball.offT=rand(.9,2.4);
           break;
         }
       }
@@ -891,12 +895,36 @@ function stepOffBall(dt){
         ball.p=[randPerchX(GL[1]), Math.min(ly-S*.2,-30)]; ball.hv=[0,0];
       }
     }
+  } else if(ball.stroll){
+    const st=ball.stroll; st.t-=dt;
+    const nx=ball.p[0]+st.dir*st.speed*dt;
+    const syN=surfaceAt(ball.perchG,nx), syC=surfaceAt(ball.perchG,ball.p[0]);
+    if(st.t<=0){
+      ball.stroll=null; ball.hopY=0; ball.offT=rand(.5,1.4);
+    } else if(syN===null||syC===null||Math.abs(syN-syC)>S*.05){
+      if(!st.turned){ st.turned=true; st.dir*=-1; }
+      else { ball.stroll=null; ball.hopY=0; ball.offT=rand(.5,1.4); }
+    } else {
+      ball.p[0]=nx;
+      ball.hopY=Math.sin(st.t*22)*S*.006;
+      ball.eyeTarget=[st.dir,0];
+    }
   } else {
     ball.offT=(ball.offT===undefined?1.2:ball.offT)-dt;
     if(ball.offT<=0){
-      const cur=GL.reduce((best,g)=>Math.abs(g.cxm-ball.p[0])<Math.abs(best.cxm-ball.p[0])?g:best,GL[0]);
-      let g; do{ g=GL[rnd5()]; }while(g===cur);
-      offHopTo(g);
+      const r=Math.random();
+      const cur=ball.perchG||GL.reduce((best,g)=>Math.abs(g.cxm-ball.p[0])<Math.abs(best.cxm-ball.p[0])?g:best,GL[0]);
+      if(r<.42){
+        let g; do{ g=GL[rnd5()]; }while(g===cur);
+        offHopTo(g);
+      } else if(r<.78 && cur){
+        const okL=surfaceAt(cur,ball.p[0]-S*.06)!==null, okR=surfaceAt(cur,ball.p[0]+S*.06)!==null;
+        const dir=okL&&okR?(Math.random()<.5?-1:1):(okR?1:-1);
+        if(okL||okR) ball.stroll={dir, t:rand(.6,1.4), speed:rand(.3,.55)*S};
+        else offHopTo(cur);
+      } else {
+        offHopTo(cur);
+      }
     }
   }
   ball.v=[(ball.p[0]-prev[0])/Math.max(dt,1e-4),(ball.p[1]-prev[1])/Math.max(dt,1e-4)];
@@ -1061,6 +1089,7 @@ function starPower(){ if(!REDUCED){ discoT=discoDur; } }
 function skewKick(nx,ny,p){ if(REDUCED) return; wskew.vx+=nx*p*.55; wskew.vy+=ny*p*.28; }
 function shake(a){ if(!REDUCED) shakeA=Math.max(shakeA,a); }
 function flipOn(){
+  for(const g of GL){ if(g.lat){ for(const n of g.lat.nodes){ n.x=n.rx; n.y=n.ry; n.vx=0; n.vy=0; } } g.wvOn=0; g.wvPx=0; }
   state='boot'; bootT=0; sw.kv+=6;
   for(const g of GL){ g.popped=false; }
   thump();
