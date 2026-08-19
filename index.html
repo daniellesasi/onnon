@@ -327,7 +327,32 @@ function bake(g,color){
   x.fill(g.path,'evenodd');
   return {cn, w, h, ox:b[0]-pad, oy:b[1]-pad};
 }
-function bakeAll(){ for(const g of GL){ g.grey=bake(g,GREY); g.red=bake(g,RED); g.dark=bake(g,DEEP); } }
+function bakeAll(){ for(const g of GL){ g.grey=bake(g,GREY); g.red=bake(g,RED); g.dark=bake(g,DEEP); bakeSurface(g); } }
+function bakeSurface(g){
+  const c=g.red, W=c.cn.width, H=c.cn.height;
+  const d=c.cn.getContext('2d').getImageData(0,0,W,H).data;
+  const cols=new Float32Array(Math.max(1,Math.floor(c.w))); cols.fill(NaN);
+  for(let x=0;x<cols.length;x++){
+    const px=Math.min(W-1,Math.round(x*DPR));
+    for(let y=0;y<H;y++){
+      if(d[(y*W+px)*4+3]>60){ cols[x]=y/DPR; break; }
+    }
+  }
+  g.surf=cols;
+}
+function surfaceAt(g,wx){
+  if(!g||!g.surf||!g.red) return null;
+  const i=Math.round(wx-g.red.ox);
+  if(i<0||i>=g.surf.length) return null;
+  const v=g.surf[i]; return isNaN(v)? null : g.red.oy+v;
+}
+function randPerchX(g){
+  for(let k=0;k<24;k++){
+    const i=Math.floor(rand(g.surf.length*.08,g.surf.length*.92));
+    if(!isNaN(g.surf[i])) return g.red.ox+i;
+  }
+  return g.cxm;
+}
 function drawCache(g,c,alpha,dx,dy){
   if(alpha<=0.003) return;
   const k=g.spr;
@@ -340,7 +365,25 @@ function drawCache(g,c,alpha,dx,dy){
 /* ============================ ball & authored loop ============================ */
 const ball={p:[0,0], prev:[0,0], v:[0,0], r:10, mode:'path', t:0, segI:0,
             hidden:false, sq:0, sqA:0, blink:0, nextBlink:2.5, freeT:0, hist:[],
-            mood:'neutral', moodT:0, moodDur:1, eyeDrift:[0,0], eyeTarget:[0,0], hopY:0, spin:0, idleT:2};
+            mood:'neutral', moodT:0, moodDur:1, eyeDrift:[0,0], eyeTarget:[0,0], hopY:0, spin:0, idleT:2,
+            grounded:false,
+            blob:Array.from({length:14},()=>({off:0,vel:0}))};
+function stepBlob(dt){
+  const B=ball.blob, n=B.length;
+  const sp=len(ball.v), ivx=sp>1?ball.v[0]/sp:0, ivy=sp>1?ball.v[1]/sp:0;
+  const stretch=clamp(sp/(3.2*S),0,.5);
+  for(let i=0;i<n;i++){
+    const a=i/n*Math.PI*2, dx=Math.cos(a), dy=Math.sin(a);
+    let force=0;
+    force += -ball.sq*.6*Math.cos(2*(a-ball.sqA));
+    const vd=dx*ivx+dy*ivy;
+    force += stretch*(vd*vd*.85-.28*stretch);
+    if(ball.grounded && dy>.45) force -= .11*dy;
+    const p=B[i], L=B[(i+n-1)%n], R=B[(i+1)%n];
+    p.vel += ((force-p.off)*150 + (L.off+R.off-2*p.off)*190 - p.vel*9.5)*dt;
+  }
+  for(const p of B){ p.off=clamp(p.off+p.vel*dt,-.5,.8); }
+}
 function setMood(m,t){ ball.mood=m; ball.moodT=t; ball.moodDur=t; ball.landed=false; if(m!=='cheer') ball.spin=0; }
 function stepGestures(dt){
   ball.moodT-=dt; if(ball.moodT<=0&&ball.mood!=='neutral') ball.mood='neutral';
@@ -569,12 +612,23 @@ function drawBallBody(p,r,vel,sq,sqA,face,isMain){
   const sp=len(vel);
   ctx.save(); ctx.translate(p[0],p[1]);
   const st=clamp(sp/(3.6*S),0,.22), va=Math.atan2(vel[1],vel[0]);
-  ctx.rotate(Math.abs(sq)>.02?sqA:va);
-  const q=Math.abs(sq)>.02? sq*.32 : 0;
-  ctx.scale(1+(Math.abs(sq)>.02? q : st), 1-(Math.abs(sq)>.02? q : st));
-  ctx.rotate(-(Math.abs(sq)>.02?sqA:va));
   ctx.fillStyle='#FFFFFF'; ctx.strokeStyle=DEEP; ctx.lineWidth=Math.max(2,r*.16);
-  ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.fill(); ctx.stroke();
+  if(isMain&&ball.blob){
+    const B=ball.blob, n=B.length, P=[];
+    for(let i=0;i<n;i++){ const a=i/n*Math.PI*2, rr=r*(1+B[i].off);
+      P.push([Math.cos(a)*rr, Math.sin(a)*rr]); }
+    ctx.beginPath();
+    ctx.moveTo((P[n-1][0]+P[0][0])/2,(P[n-1][1]+P[0][1])/2);
+    for(let i=0;i<n;i++){ const nx=P[(i+1)%n], cur=P[i];
+      ctx.quadraticCurveTo(cur[0],cur[1],(cur[0]+nx[0])/2,(cur[1]+nx[1])/2); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  } else {
+    ctx.rotate(Math.abs(sq)>.02?sqA:va);
+    const q=Math.abs(sq)>.02? sq*.32 : 0;
+    ctx.scale(1+(Math.abs(sq)>.02? q : st), 1-(Math.abs(sq)>.02? q : st));
+    ctx.rotate(-(Math.abs(sq)>.02?sqA:va));
+    ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.fill(); ctx.stroke();
+  }
   if(face){
     const lv=sp>1? mul(nrm(vel), r*.16) : [0,0];
     if(isMain){ lv[0]+=ball.eyeDrift[0]*r*.14; lv[1]+=ball.eyeDrift[1]*r*.14+(ball.mood==='sad'?r*.06:0); }
@@ -679,7 +733,9 @@ function stepOffBall(dt){
   if(ball.hopPhase==='crouch'){
     ball.hopT-=dt;
     if(ball.hopT<=0){
-      const to=glyphTop(ball.hopTarget);
+      const tx=randPerchX(ball.hopTarget);
+      const tsy=surfaceAt(ball.hopTarget,tx);
+      const to=[tx,(tsy!==null?tsy:ball.hopTarget.wbb[1])-ball.r];
       const y0=ball.p[1], y1=to[1];
       const apex=Math.min(y0,y1)-Math.max(S*.11,(y0-y1)*.15+S*.06);
       const vy0=-Math.sqrt(2*G2*Math.max(1,y0-apex));
@@ -689,16 +745,26 @@ function stepOffBall(dt){
       ball.sq=-.45; ball.sqV=0; ball.sqA=Math.PI/2;
     }
   } else if(ball.hopPhase==='air'){
+    const prevY=ball.p[1];
     ball.hv[1]+=G2*dt;
     ball.p[0]+=ball.hv[0]*dt; ball.p[1]+=ball.hv[1]*dt;
-    const to=glyphTop(ball.hopTarget);
-    if(ball.hv[1]>0 && ball.p[1]>=to[1]){
-      ball.p=[to[0],to[1]];
-      const imp=clamp(ball.hv[1]/(2.2*S),.3,1);
-      if(ball.hopTarget.spr) ball.hopTarget.spr.sv-=2.6*imp;
-      ball.sq=imp; ball.sqV=0; ball.sqA=Math.PI/2;
-      skewKick(0,.4,imp*.5);
-      ball.hopPhase=null; ball.offT=rand(2.2,4.6);
+    if(ball.hv[1]>0){
+      for(const g of GL){
+        const sy=surfaceAt(g,ball.p[0]);
+        if(sy===null) continue;
+        if(ball.p[1]+ball.r>=sy && prevY+ball.r<=sy+S*.025){
+          ball.p[1]=sy-ball.r;
+          const imp=clamp(ball.hv[1]/(2.2*S),.3,1);
+          if(g.spr) g.spr.sv-=2.6*imp;
+          ball.sq=imp; ball.sqV=0; ball.sqA=Math.PI/2;
+          skewKick(0,.4,imp*.5);
+          ball.hopPhase=null; ball.perchG=g; ball.offT=rand(2.2,4.6);
+          break;
+        }
+      }
+      if(ball.hopPhase==='air' && ball.p[1]>ly+LH+S*.2){ /* missed everything: respawn drop */
+        ball.p=[randPerchX(GL[1]), Math.min(ly-S*.2,-30)]; ball.hv=[0,0];
+      }
     }
   } else {
     ball.offT=(ball.offT===undefined?1.2:ball.offT)-dt;
@@ -710,7 +776,10 @@ function stepOffBall(dt){
   }
   ball.v=[(ball.p[0]-prev[0])/Math.max(dt,1e-4),(ball.p[1]-prev[1])/Math.max(dt,1e-4)];
 }
-function glyphTop(g){ return [g.cxm, g.wbb[1]-ball.r*1.1]; }
+function glyphTop(g){
+  const x=g.cxm, sy=surfaceAt(g,x);
+  return [x, (sy!==null? sy : g.wbb[1]) - ball.r];
+}
 function setHint(s){ elHint.innerHTML=s; elHint.style.opacity=s?'1':'0'; }
 function simonStart(){
   simon.active=true; simon.seq=[rnd5(),rnd5()]; simon.round=1; simon.gap=.42; simon.failT=0; simon.idleT=0;
@@ -970,6 +1039,8 @@ function step(dt){
   ball.blink-=dt; ball.nextBlink-=dt;
   if(ball.nextBlink<0){ ball.blink=.12; ball.nextBlink=rand(2.2,4.6); }
   ball.sqV=(ball.sqV||0)+(-(ball.sq)*170-(ball.sqV||0)*10.5)*dt; ball.sq+=ball.sqV*dt;
+  stepBlob(dt);
+  ball.grounded=(state==='off'&&!ball.hopPhase)||(simon.active&&simon.phase==='input'&&ball.mode==='simon');
   if(state==='run'){ simonStep(dt); stepGestures(dt); }
   if(state==='off'&&!REDUCED){ pushTrail(ball.p[0],ball.p[1],len(ball.v)); stepOffBall(dt); stepGestures(dt); }
   if(state==='run'&&!REDUCED){
