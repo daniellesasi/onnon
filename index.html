@@ -505,25 +505,36 @@ function drawParts(){
   }
   ctx.globalAlpha=1;
 }
-function pushTrail(x,y){ trail.push({x,y,t:0}); if(trail.length>26) trail.shift(); }
-function stepTrail(dt){ for(let i=trail.length-1;i>=0;i--){ trail[i].t+=dt; if(trail[i].t>.30) trail.splice(i,1); } }
+function pushTrail(x,y,v){ trail.push({x,y,t:0,v:v||0}); if(trail.length>34) trail.shift(); }
+function stepTrail(dt){ for(let i=trail.length-1;i>=0;i--){ trail[i].t+=dt; if(trail[i].t>.35) trail.splice(i,1); } }
 function drawTrail(){
-  const n=trail.length; if(n<3) return;
+  const pts=trail.slice();
+  pts.push({x:ball.p[0], y:ball.p[1], t:0, v:len(ball.v)});   // live head = the character
+  const n=pts.length; if(n<3) return;
   const Lx=[],Ly=[],Rx=[],Ry=[];
+  let maxW=0;
   for(let i=0;i<n;i++){
-    const p=trail[i], q=trail[Math.min(n-1,i+1)], o=trail[Math.max(0,i-1)];
+    const p=pts[i], q=pts[Math.min(n-1,i+1)], o=pts[Math.max(0,i-1)];
     let dx=q.x-o.x, dy=q.y-o.y; const dl=Math.hypot(dx,dy)||1; dx/=dl; dy/=dl;
-    const age=Math.max(0,1-p.t/.30);
-    const w=ball.r*.92*Math.pow(i/(n-1),1.35)*age;
+    const age=Math.max(0,1-p.t/.35);
+    const spd=clamp((p.v||0)/(2.1*S),0,1);
+    const w=ball.r*1.15*Math.pow(i/(n-1),1.25)*age*spd;
+    maxW=Math.max(maxW,w);
     Lx.push(p.x-dy*w); Ly.push(p.y+dx*w);
     Rx.push(p.x+dy*w); Ry.push(p.y-dx*w);
   }
+  if(maxW<.6) return;
+  const gd=ctx.createLinearGradient(pts[0].x,pts[0].y,pts[n-1].x,pts[n-1].y);
+  gd.addColorStop(0,'rgba(229,54,55,0)');
+  gd.addColorStop(.45,'rgba(229,54,55,.35)');
+  gd.addColorStop(1,'rgba(229,54,55,.85)');
   ctx.beginPath();
   ctx.moveTo(Lx[0],Ly[0]);
   for(let i=1;i<n;i++) ctx.lineTo(Lx[i],Ly[i]);
+  ctx.arc(pts[n-1].x,pts[n-1].y, Math.max(.1,ball.r*1.15*Math.max(0,Math.min(1,(pts[n-1].v||0)/(2.1*S)))), 0, Math.PI*2);
   for(let i=n-1;i>=0;i--) ctx.lineTo(Rx[i],Ry[i]);
   ctx.closePath();
-  ctx.fillStyle=RED; ctx.fill();
+  ctx.fillStyle=gd; ctx.fill();
 }
 
 /* ============================ minis ============================ */
@@ -749,8 +760,6 @@ function simonStep(dt){
         const prev=[ball.p[0],ball.p[1]];
         ball.p=sg.fn(tt);
         ball.v=[(ball.p[0]-prev[0])/Math.max(dt,1e-4),(ball.p[1]-prev[1])/Math.max(dt,1e-4)];
-        if(sg.trail) pushTrail(ball.p[0],ball.p[1]);
-        if(sg.slide){ slideDust+=dt; if(slideDust>.04){ slideDust=0; pushTrail(ball.p[0],ball.p[1]+ball.r*.6); } }
         if(tt>=1){ if(sg.onEnd) sg.onEnd(); simon.qi++; simon.qt=0; }
       }
     }
@@ -913,6 +922,7 @@ function step(dt){
   ball.sqV=(ball.sqV||0)+(-(ball.sq)*170-(ball.sqV||0)*10.5)*dt; ball.sq+=ball.sqV*dt;
   if(state==='run'){ simonStep(dt); stepGestures(dt); }
   if(state==='run'&&!REDUCED){
+    pushTrail(ball.p[0], ball.p[1], len(ball.v));
     ball.prev=[ball.p[0],ball.p[1]];
     if(ball.mode==='path'){
       ball.t+=dt*spd;
@@ -926,9 +936,6 @@ function step(dt){
       ball.p=seg.fn(tt);
       ball.hidden=!!seg.hidden;
       ball.v=[(ball.p[0]-ball.prev[0])/Math.max(dt,1e-4),(ball.p[1]-ball.prev[1])/Math.max(dt,1e-4)];
-      if(seg.slide){ slideDust+=dt; if(slideDust>.04){ slideDust=0;
-        pushTrail(ball.p[0]-seg.slide.n[0]*ball.r*.5, ball.p[1]-seg.slide.n[1]*ball.r*.5); } }
-      if(seg.trail || len(ball.v)>2.4*S)pushTrail(ball.p[0],ball.p[1]);
     }else if(ball.mode==='drag'){
       ball.hidden=false;
       const tx=clamp(pointer[0],stage.left,stage.right), ty=clamp(pointer[1],stage.top,stage.floor);
@@ -939,7 +946,6 @@ function step(dt){
     }else if(ball.mode==='free'){
       collideFree(ball,ball.r,dt);
       ball.freeT+=dt;
-      if(len(ball.v)>2.2*S)pushTrail(ball.p[0],ball.p[1]);
       if(ball.freeT>2.8 || (ball.freeT>1&&Math.abs(ball.p[1]-(stage.floor-ball.r))<2&&len(ball.v)<S*.12)){
         ball.mode='warp'; ball.wt=0; ball.wf=[ball.p[0],ball.p[1]]; whoosh(true);
       }
@@ -947,7 +953,6 @@ function step(dt){
       ball.wt+=dt/.5; const t=clamp(ball.wt,0,1);
       const d0=[holes[0].x, Math.min(ly-.30*S,-40)];
       ball.p=qbez(ball.wf,[lerp(ball.wf[0],d0[0],.5), Math.min(ball.wf[1],d0[1])-S*.22], d0, eInOut(t));
-      pushTrail(ball.p[0],ball.p[1]);
       if(t>=1){ ball.mode='path'; ball.t=0; ball.segI=0; }
     }
     stepMinis(dt);
