@@ -1098,6 +1098,8 @@ function skewKick(nx,ny,p){ if(REDUCED) return; wskew.vx+=nx*p*.55; wskew.vy+=ny
 function shake(a){ if(!REDUCED) shakeA=Math.max(shakeA,a); }
 function flipOn(){
   for(const g of GL){ if(g.lat){ for(const n of g.lat.nodes){ n.x=n.rx; n.y=n.ry; n.vx=0; n.vy=0; } } g.wvOn=0; g.wvPx=0; }
+  ball.hidden=true; ball.circ=null; ball.stroll=null; ball.hopPhase=null; trail.length=0;
+  ball.mode='wait';
   state='boot'; bootT=0; sw.kv+=6;
   for(const g of GL){ g.popped=false; }
   thump();
@@ -1105,7 +1107,6 @@ function flipOn(){
 }
 function finishBoot(){
   state='run';
-  ball.hidden=false;
   document.body.classList.add('on');
   elHudB.textContent=simon.best;
   elMute.style.opacity='.85'; elMute.style.pointerEvents='auto';
