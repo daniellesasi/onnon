@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>What Is a Playable Ad?</title>
+<meta name="description" content="A playable ad is a mini, interactive version of a game or app that runs inside an ad slot — played, not watched. How they work, where they run, and what makes a good one.">
+<link rel="canonical" href="https://onnon.io/playable-ads.html">
+<meta property="og:title" content="What Is a Playable Ad?">
+<meta property="og:description" content="Played, not watched — how playable ads work, where they run, and what makes a good one.">
+<meta property="og:url" content="https://onnon.io/playable-ads.html">
+<meta property="og:image" content="https://onnon.io/og.png">
+<meta property="og:site_name" content="ON&ON">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#E53637">
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='30' fill='%23E53637'/><ellipse cx='32' cy='32' rx='11' ry='14' fill='%23FBF7F0'/></svg>">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"What is a playable ad?","acceptedAnswer":{"@type":"Answer","text":"A playable ad is a miniature, interactive version of a game or app that runs inside another app's ad slot. Instead of watching a video, the viewer plays a short slice of the real experience — usually 15 to 60 seconds — and is then offered the download."}},
+{"@type":"Question","name":"Where do playable ads run?","acceptedAnswer":{"@type":"Answer","text":"On the major mobile ad networks — AppLovin, Unity Ads, ironSource, Mintegral, Meta and others. Each network has its own technical spec, so a playable is usually shipped as one self-contained HTML file per network."}},
+{"@type":"Question","name":"How is a playable ad different from a video ad?","acceptedAnswer":{"@type":"Answer","text":"A video is watched; a playable is played. Because the user has already tried the mechanic before tapping the store button, installs driven by playables tend to come from people who already know they like the game."}},
+{"@type":"Question","name":"What is an interactive end card?","acceptedAnswer":{"@type":"Answer","text":"The interactive final screen that follows a video ad — a tap-to-try moment between the video and the app store, doing the same job as a full playable in a smaller format."}},
+{"@type":"Question","name":"How many versions of a playable should exist?","acceptedAnswer":{"@type":"Answer","text":"More than one. Hooks, pacing, difficulty and themes all measurably change performance, so a playable is best run as a family of variants where the data decides which version scales."}}
+]}
+</script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;color:#111}
+  #menu{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;z-index:20;
+    padding:calc(10px + env(safe-area-inset-top)) 20px 10px;background:rgba(255,255,255,.88);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  #menu .brand{font-weight:900;color:#E53637;text-decoration:none;font-size:clamp(15px,2vmin,18px)}
+  #menu .links{margin-left:26px;display:flex;gap:2px;flex-wrap:wrap}
+  #menu a{text-decoration:none;font-weight:800;font-size:clamp(10px,1.5vmin,13px);letter-spacing:.14em;color:#111;padding:8px 10px;border-radius:8px}
+  #menu a:hover{color:#E53637}
+  main{max-width:680px;margin:0 auto;padding:calc(110px + env(safe-area-inset-top)) 24px 80px}
+  .eyebrow{font-size:12px;font-weight:800;letter-spacing:.24em;color:#E53637;margin-bottom:12px}
+  h1{font-size:clamp(30px,5.4vmin,46px);font-weight:900;letter-spacing:-.015em;margin-bottom:16px;text-wrap:balance}
+  h2{font-size:clamp(19px,2.8vmin,24px);font-weight:900;margin:38px 0 10px}
+  p{font-size:clamp(15px,2.1vmin,17px);line-height:1.65;color:#333;margin:12px 0;max-width:62ch}
+  .cta{display:inline-block;margin-top:36px;background:#E53637;color:#fff;font-weight:900;letter-spacing:.14em;
+    font-size:14px;padding:15px 30px;border-radius:999px;text-decoration:none}
+  .cta:hover{background:#111}
+  footer{padding:26px 24px;border-top:1px solid #EEE;font-size:12px;letter-spacing:.12em;color:#9E9E9E}
+  footer b{color:#E53637}
+</style>
+</head>
+<body>
+<nav id="menu" aria-label="site">
+  <a class="brand" href="index.html">ON&amp;ON</a>
+  <div class="links">
+    <a href="work.html">WORK</a>
+    <a href="index.html#how">HOW IT WORKS</a>
+    <a href="index.html#make">WHAT WE MAKE</a>
+    <a href="index.html#about">ABOUT</a>
+    <a href="index.html#contact">CONTACT</a>
+  </div>
+</nav>
+<main>
+  <div class="eyebrow">PLAYABLE ADS, EXPLAINED</div>
+  <h1>What is a playable ad?</h1>
+  <p>A playable ad is a miniature, interactive version of a game or app that runs inside another app's ad slot. Instead of watching a video, the viewer <em>plays</em> a short slice of the real experience &mdash; usually 15 to 60 seconds &mdash; and is then offered the download.</p>
+
+  <h2>Why playables work</h2>
+  <p>A video ad can only promise the game is fun. A playable proves it &mdash; or doesn't &mdash; before the install ever happens. The tap on the store button comes from someone who has already enjoyed the mechanic, which is why user-acquisition teams treat playables as their highest-intent creative format.</p>
+
+  <h2>How they're built</h2>
+  <p>Technically, a playable is a single self-contained HTML file: art, code and sound inlined, no external requests, sized and structured to each ad network's spec &mdash; AppLovin, Unity Ads, ironSource, Mintegral, Meta all have their own rules about file size, orientation handling, MRAID events and store calls. One concept usually ships as several network-specific builds.</p>
+
+  <h2>What makes a good one</h2>
+  <p>The first touch has to land within seconds, without instructions. Curiosity is never punished &mdash; early mistakes are forgiven, because a player who loses in an ad doesn't install the game. One mechanic, communicated wordlessly, and an end card that converts the fun into a store visit.</p>
+
+  <h2>Where the data comes in</h2>
+  <p>Every playable reports back: what was touched first, where thumbs lingered, where players quit. That's why the strongest playable programs aren't one ad but a family of variants &mdash; different hooks, pacing and difficulty &mdash; where the numbers decide which version scales. That loop is what we build at ON&amp;ON: make, ship, learn, remake. On, and on.</p>
+
+  <a class="cta" href="index.html#contact">TALK TO US &#8594;</a>
+</main>
+<footer><b>ON&amp;ON</b> &mdash; a playable company &middot; <a href="index.html" style="color:#9E9E9E">onnon.io</a></footer>
+</body>
+</html>

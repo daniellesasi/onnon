@@ -38,6 +38,25 @@
   .cta{display:inline-block;margin-top:44px;background:#E53637;color:#fff;font-weight:900;letter-spacing:.14em;
     font-size:14px;padding:15px 30px;border-radius:999px;text-decoration:none}
   .cta:hover{background:#111}
+  #pscrim{position:fixed;inset:0;background:rgba(8,8,14,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    opacity:0;pointer-events:none;transition:opacity .3s ease}
+  #pscrim.open{opacity:1;pointer-events:auto}
+  #phone{position:relative;height:min(80vh,800px);aspect-ratio:390/820;max-width:92vw;
+    border-radius:clamp(28px,5vh,46px);padding:10px;
+    background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.05) 45%,rgba(255,255,255,.14));
+    border:1.5px solid rgba(255,255,255,.45);
+    box-shadow:0 40px 120px rgba(0,0,0,.55), inset 0 0 34px rgba(255,255,255,.07);
+    transform:scale(.92) translateY(16px);transition:transform .35s cubic-bezier(.2,1.4,.3,1)}
+  #pscrim.open #phone{transform:scale(1) translateY(0)}
+  #phone::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    background:linear-gradient(115deg,rgba(255,255,255,.25) 0%,rgba(255,255,255,0) 30%,rgba(255,255,255,0) 70%,rgba(255,255,255,.12) 100%)}
+  #phone iframe{width:100%;height:100%;border:0;border-radius:clamp(20px,4vh,36px);background:#000;display:block}
+  #pname{color:rgba(255,255,255,.85);font-weight:800;font-size:12px;letter-spacing:.22em}
+  #pclose{position:absolute;top:-14px;right:-14px;width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);
+    background:rgba(255,255,255,.14);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;
+    font-size:16px;font-weight:900;cursor:pointer;z-index:2}
+  #pclose:hover{background:#E53637;border-color:#E53637}
   footer{padding:34px 24px calc(30px + env(safe-area-inset-bottom));display:flex;gap:14px;flex-wrap:wrap;
     align-items:baseline;justify-content:space-between;border-top:1px solid #EEE;
     font-size:12px;letter-spacing:.12em;color:#9E9E9E;margin-top:40px}
@@ -60,9 +79,9 @@
   <h1>Work</h1>
   <p class="lede">Selected playables — designed, built, shipped and optimized. These are the real builds &mdash; tap one and play the ad itself. More on the way.</p>
   <div class="grid">
-    <a class="tile live" href="wanda/"><em>01</em><strong>WANDERING WANDA</strong><span>ROLL THE CITY CLEAN &middot; COLLECT-A-THON</span><i>PLAY &#8594;</i></a>
-    <a class="tile live" href="cats/"><em>02</em><strong>FIND THE CATS</strong><span>BEFORE THE LIGHTS GO OUT &middot; HIDDEN OBJECT</span><i>PLAY &#8594;</i></a>
-    <a class="tile live" href="passport/"><em>03</em><strong>PASSPORT CONTROL</strong><span>FIND IT &middot; STAMP IT</span><i>PLAY &#8594;</i></a>
+    <a class="tile live" href="work/wanda/" data-name="WANDERING WANDA"><em>01</em><strong>WANDERING WANDA</strong><span>ROLL THE CITY CLEAN &middot; COLLECT-A-THON</span><i>PLAY &#8594;</i></a>
+    <a class="tile live" href="work/cats/" data-name="FIND THE CATS"><em>02</em><strong>FIND THE CATS</strong><span>BEFORE THE LIGHTS GO OUT &middot; HIDDEN OBJECT</span><i>PLAY &#8594;</i></a>
+    <a class="tile live" href="work/passport/" data-name="PASSPORT CONTROL"><em>03</em><strong>PASSPORT CONTROL</strong><span>FIND IT &middot; STAMP IT</span><i>PLAY &#8594;</i></a>
     <div class="tile"><em>04</em><b>&amp;</b><span>COMING SOON</span></div>
     <div class="tile"><em>05</em><b>&amp;</b><span>COMING SOON</span></div>
     <div class="tile"><em>06</em><b>&amp;</b><span>COMING SOON</span></div>
@@ -70,5 +89,31 @@
   <a class="cta" href="index.html#contact">WANT THE REEL? &#8594;</a>
 </main>
 <footer><span><b>ON&amp;ON</b> &mdash; a playable company</span><span>&copy; 2026 &middot; onnon.io</span></footer>
+<div id="pscrim" role="dialog" aria-modal="true" aria-label="playable preview">
+  <div id="phone">
+    <button id="pclose" aria-label="close">&#10005;</button>
+    <iframe id="pframe" title="playable ad"></iframe>
+  </div>
+  <div id="pname"></div>
+</div>
+<script>
+(function(){
+  var scrim=document.getElementById('pscrim'), frame=document.getElementById('pframe'),
+      nameEl=document.getElementById('pname');
+  function open(src,name){ frame.src=src; nameEl.textContent=name||''; scrim.classList.add('open');
+    document.body.style.overflow='hidden'; }
+  function close(){ scrim.classList.remove('open'); document.body.style.overflow='';
+    setTimeout(function(){ frame.src=''; },300); }
+  document.querySelectorAll('a.tile.live').forEach(function(a){
+    a.addEventListener('click',function(e){
+      if(e.metaKey||e.ctrlKey||e.shiftKey) return; /* let power users open the raw build */
+      e.preventDefault(); open(a.getAttribute('href'), a.dataset.name);
+    });
+  });
+  document.getElementById('pclose').addEventListener('click',close);
+  scrim.addEventListener('click',function(e){ if(e.target===scrim) close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
 </body>
 </html>
