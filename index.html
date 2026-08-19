@@ -942,7 +942,7 @@ function glyphTop(g){
 }
 function setHint(s){ elHint.innerHTML=s; elHint.style.opacity=s?'1':'0'; }
 function simonStart(){
-  simon.active=true; simon.seq=[rnd5(),rnd5()]; simon.round=1; simon.gap=.42; simon.failT=0; simon.idleT=0;
+  simon.active=true; simon.seq=[rnd5()]; simon.round=1; simon.gap=.42; simon.failT=0; simon.idleT=0;
   document.body.classList.add('simon');
   elHudR.textContent=simon.round; elHudB.textContent=simon.best;
   if(!REDUCED){ ball.mode='simon'; ball.hidden=false; }
@@ -1111,7 +1111,13 @@ function finishBoot(){
 
   note(1046.5,.3,'triangle',.8);
   ball.p=[holes[0].x, Math.min(ly-.30*S,-40)];
-  simonStart();
+  if(REDUCED){ simonStart(); }
+  else {
+    GL.forEach((g,i)=>setTimeout(()=>{ if(state!=='run') return;
+      g.litT=.38; if(g.spr) g.spr.sv-=1.2; note(g.note,.2,'triangle',.85);
+    }, 320+i*150));
+    setTimeout(()=>{ if(state==='run'&&!simon.active) simonStart(); }, 320+5*150+520);
+  }
 }
 function flipOff(){
   state='off'; sw.kv-=6;

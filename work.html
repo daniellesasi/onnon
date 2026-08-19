@@ -103,7 +103,18 @@
       inset -2px 0 2px rgba(30,40,70,.22),
       inset 0 0 34px rgba(255,255,255,.07);
     transform:rotateX(var(--rx)) rotateY(var(--ry)) scale(.9) translateY(20px);
-    transition:transform .35s cubic-bezier(.2,1.4,.3,1)}
+    transition:transform .35s cubic-bezier(.2,1.4,.3,1);
+    transform-style:preserve-3d}
+  #pback{position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    transform:translateZ(-16px);
+    background:linear-gradient(135deg,rgba(205,214,228,.55),rgba(148,158,178,.4));
+    border:1.5px solid rgba(255,255,255,.4)}
+  .ps{position:absolute;pointer-events:none;
+    background:linear-gradient(rgba(255,255,255,.6),rgba(168,182,204,.45))}
+  .ps.psl{left:0;top:36px;bottom:36px;width:16px;transform-origin:left center;transform:rotateY(90deg)}
+  .ps.psr{right:0;top:36px;bottom:36px;width:16px;transform-origin:right center;transform:rotateY(-90deg)}
+  .ps.pst{top:0;left:40px;right:40px;height:16px;transform-origin:center top;transform:rotateX(-90deg)}
+  .ps.psb{bottom:0;left:40px;right:40px;height:16px;transform-origin:center bottom;transform:rotateX(90deg)}
   #pscrim.open #phone{transform:rotateX(var(--rx)) rotateY(var(--ry)) scale(1) translateY(0)}
   #pscrim.open #phone.tilting{transition:transform .12s ease-out}
   #phone::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
@@ -164,6 +175,8 @@
 <div id="pscrim" role="dialog" aria-modal="true" aria-label="playable preview">
   <div id="pwrap">
     <div id="phone">
+      <div id="pback"></div>
+      <div class="ps psl"></div><div class="ps psr"></div><div class="ps pst"></div><div class="ps psb"></div>
       <button id="pclose" aria-label="close">&#10005;</button>
       <iframe id="pframe" title="playable ad"></iframe>
       <div id="pcover"></div>
@@ -189,7 +202,7 @@
         var a=fromEl.getBoundingClientRect(), b=phone2.getBoundingClientRect();
         var dx=(a.left+a.width/2)-(b.left+b.width/2), dy=(a.top+a.height/2)-(b.top+b.height/2), s=a.width/b.width;
         phone2.style.transition='none';
-        phone2.style.transform='translate('+dx+'px,'+dy+'px) scale('+s+')';
+        phone2.style.transform='translate('+dx+'px,'+dy+'px) scale('+s+') rotateY(20deg) rotateX(7deg)';
         void phone2.offsetWidth;
         phone2.style.transition='transform .55s cubic-bezier(.2,1.2,.3,1)';
         phone2.style.transform='';
