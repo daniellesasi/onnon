@@ -963,11 +963,9 @@ function draw(){
   ctx.clearRect(0,0,vw,vh);
   if(shakeA>.05) ctx.translate(rand(-1,1)*shakeA, rand(-1,1)*shakeA);
   drawSwitch();
-  const shx=S*.006, shy=S*.011;
   ctx.save();
   const wcx=lx+LW/2, wcy=ly+LH/2;
   ctx.translate(wcx,wcy); ctx.transform(1, wskew.y*.45, wskew.x*.45, 1, 0, 0); ctx.translate(-wcx,-wcy);
-  for(const g of GL) drawCache(g,g.dark,.10*Math.max(g.mix,.55),shx,shy);
   for(const g of GL){ if(g.litT>0){
     const gr=Math.max(g.wbb[2]-g.wbb[0],g.wbb[3]-g.wbb[1])*.62;
     const gd=ctx.createRadialGradient(g.cxm,g.cym,gr*.2,g.cxm,g.cym,gr);
@@ -993,13 +991,6 @@ function draw(){
   if(simon.failT>0) for(const g of GL) drawCache(g,g.red,Math.min(1,simon.failT*1.6),0,0);
   ctx.restore();
   if(!REDUCED&&state==='run'){
-    if(simon.active&&(simon.phase==='input'||simon.phase==='won')&&!ball.hidden&&ball.groundY){
-      const lift=Math.max(0,(ball.groundY)-(ball.p[1]+ball.hopY));
-      const k=clamp(1-lift/(S*.28),.4,1);
-      ctx.globalAlpha=.16*k; ctx.fillStyle='#111';
-      ctx.beginPath(); ctx.ellipse(ball.p[0], ball.groundY+ball.r*.95, ball.r*.95*k, ball.r*.3*k, 0,0,7);
-      ctx.fill(); ctx.globalAlpha=1;
-    }
     drawTrail(); drawGhosts();
     for(const m of minis) drawBallMaybeClipped(m.p,m.r,m.v,m.sq,m.sqA,true);
     if(!ball.hidden) drawBallMaybeClipped(ball.p,ball.r,ball.v,ball.sq,ball.sqA,true,true);
@@ -1025,7 +1016,10 @@ function draw(){
 
 /* ============================ layout / loop ============================ */
 const hero=document.getElementById('hero');
+let _rw=0,_rh=0;
 function resize(){
+  if(Math.abs(hero.clientWidth-_rw)<2 && Math.abs(hero.clientHeight-_rh)<2) return;
+  _rw=hero.clientWidth; _rh=hero.clientHeight;
   DPR=Math.min(2,window.devicePixelRatio||1);
   vw=hero.clientWidth; vh=hero.clientHeight;
   cv.width=Math.round(vw*DPR); cv.height=Math.round(vh*DPR);
@@ -1041,6 +1035,10 @@ function resize(){
   elHint.style.top=(sw.y+sw.h/2+62)+'px';
   document.getElementById('hud').style.top=(sw.y+sw.h/2+16)+'px';
   buildGlyphs(); bakeAll(); buildPath(); buildColliders();
+  if(state==='run' && simon.active && !REDUCED){
+    ball.p=[lx+LW*.5, ly+LH*.45];
+    if(simon.phase!=='attract') simonShow(.5);
+  }
 }
 window.addEventListener('resize',resize);
 buildOdo(); resize(); elTag.style.opacity='1';
