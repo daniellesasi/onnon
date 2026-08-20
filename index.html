@@ -375,9 +375,11 @@ function buildLattice(g){
     return m;
   });
 }
+const LIT_COLS={O1:'#E53637',N1:'#FFB020',AMP:'#8B5CF6',O2:'#2FB65A',N2:'#2D7DFF'};
 function bakeAll(){ for(const g of GL){
   g.grey=bake(g,GREY); g.grey.color=GREY;
   g.red=bake(g,RED);   g.red.color=RED;
+  g.col=bake(g,LIT_COLS[g.id]); g.col.color=LIT_COLS[g.id];
   g.dark=bake(g,DEEP); g.dark.color=DEEP;
   bakeSurface(g); buildLattice(g); } }
 function bakeSurface(g){
@@ -1297,10 +1299,9 @@ function draw(){
   const wcx=lx+LW/2, wcy=ly+LH/2;
   ctx.translate(wcx,wcy); ctx.transform(1, wskew.y*.45, wskew.x*.45, 1, 0, 0); ctx.translate(-wcx,-wcy);
   for(const g of GL){
-    const litBoost=g.litT>0? clamp(g.litT*3.5,0,1):0;
-    const redA=Math.max(g.mix, litBoost);
-    if(redA<0.997) drawCache(g,g.grey,1-redA,0,0);
-    drawCache(g,g.red,redA,0,0);
+    if(g.mix<0.997) drawCache(g,g.grey,1-g.mix,0,0);
+    drawCache(g,g.red,g.mix,0,0);
+    if(g.litT>0) drawCache(g,g.col,clamp(g.litT*3.5,0,1),0,0);
     if(discoT>0&&g.ringsVB&&g.ringsVB.length){
       const u=1-discoT/discoDur;
       const env=Math.min(1, discoT/.35, u*6);
