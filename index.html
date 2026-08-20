@@ -391,6 +391,31 @@ function bakeSurface(g){
     }
   }
   g.surf=cols;
+  const STEPPX=3;
+  const hw=Math.max(1,Math.ceil(c.w/STEPPX)), hh=Math.max(1,Math.ceil(c.h/STEPPX));
+  const mask=new Uint8Array(hw*hh);
+  for(let iy=0;iy<hh;iy++) for(let ix=0;ix<hw;ix++){
+    const sx=Math.min(W-1,Math.round(ix*STEPPX*DPR)), sy=Math.min(H-1,Math.round(iy*STEPPX*DPR));
+    if(d[(sy*W+sx)*4+3]>60) mask[iy*hw+ix]=1;
+  }
+  g.hitMask=mask; g.hitW=hw; g.hitH=hh; g.hitStep=STEPPX;
+}
+function glyphInk(g,px,py){
+  if(!g.hitMask) return false;
+  const c=g.red;
+  const ix=Math.round((px-c.ox)/g.hitStep), iy=Math.round((py-c.oy)/g.hitStep);
+  if(ix<0||iy<0||ix>=g.hitW||iy>=g.hitH) return false;
+  return g.hitMask[iy*g.hitW+ix]>0;
+}
+function glyphAt(px,py){
+  for(const g of GL) if(glyphInk(g,px,py)) return g;
+  for(const r of [10,18]){
+    for(let a=0;a<8;a++){
+      const x=px+Math.cos(a*Math.PI/4)*r, y=py+Math.sin(a*Math.PI/4)*r;
+      for(const g of GL) if(glyphInk(g,x,y)) return g;
+    }
+  }
+  return null;
 }
 function pokeGlyph(g,wx,power){
   if(REDUCED||!g) return;
@@ -1053,9 +1078,7 @@ function simonStep(dt){
 }
 function simonTap(px,py){
   if(simon.phase!=='input'&&simon.phase!=='attract') return;
-  let hit=null;
-  for(const g of GL){ const b=g.wbb;
-    if(px>b[0]-6&&px<b[2]+6&&py>b[1]-6&&py<b[3]+6){ hit=g; break; } }
+  const hit=glyphAt(px,py);
   if(!hit) return;
   if(simon.phase==='attract'){ simonShow(.5); return; }
   simon.idleT=0;
@@ -1150,11 +1173,10 @@ cv.addEventListener('pointerdown',e=>{
     cv.setPointerCapture(e.pointerId);
     return;
   }
-  for(const g of GL){
-    const b=g.wbb;
-    if(px>b[0]-6&&px<b[2]+6&&py>b[1]-6&&py<b[3]+6){
+  { const g=glyphAt(px,py);
+    if(g){
       g.spr.sv-=1.4; note(g.note,.2,'triangle',.8); pokeGlyph(g,px,.7);
-      sparkle(px,py); interacted=true; elHint.style.opacity='0';
+      interacted=true; elHint.style.opacity='0';
       return;
     }
   }
