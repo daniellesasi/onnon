@@ -1301,15 +1301,25 @@ function draw(){
     const redA=Math.max(g.mix, litBoost);
     if(redA<0.997) drawCache(g,g.grey,1-redA,0,0);
     drawCache(g,g.red,redA,0,0);
-    if(discoT>0){
+    if(discoT>0&&g.ringsVB&&g.ringsVB.length){
       const u=1-discoT/discoDur;
       const env=Math.min(1, discoT/.35, u*6);
       const beat=Math.pow(1-((u*discoDur*2.07)%1), 2.6);
-      const hue=(((g.cxm+g.cym-lx-ly)/(LW+LH))*560 - u*640 + (GL.indexOf(g)*23)) % 360;
+      const hue=((((g.cxm+g.cym-lx-ly)/(LW+LH))*560 - u*640 + GL.indexOf(g)*67)%360+360)%360;
       ctx.save();
-      ctx.filter='hue-rotate('+Math.round(hue)+'deg) saturate('+(1.25+.45*beat)+') brightness('+(1+.14*beat)+')';
-      drawCache(g,g.red, env*(.75+.25*beat), 0,0);
-      ctx.restore(); ctx.filter='none';
+      ctx.globalAlpha=env*(.82+.18*beat);
+      const k2=g.spr, ks2=1+(k2.s-1)*(state==='off'?.35:1);
+      ctx.translate(g.cxm,g.cym); ctx.scale(2-ks2,ks2); ctx.translate(-g.cxm,-g.cym);
+      ctx.beginPath();
+      for(const ring of g.ringsVB){
+        const rn=ring.length/2;
+        for(let ri=0;ri<rn;ri++){ const X=lx+ring[ri*2]*U, Y=ly+ring[ri*2+1]*U;
+          ri?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }
+        ctx.closePath();
+      }
+      ctx.fillStyle='hsl('+Math.round(hue)+',88%,'+Math.round(55+8*beat)+'%)';
+      ctx.fill('evenodd');
+      ctx.restore();
     }
   }
   if(simon.failT>0) for(const g of GL) drawCache(g,g.red,Math.min(1,simon.failT*1.6),0,0);
